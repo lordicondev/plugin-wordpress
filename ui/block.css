@@ -1,0 +1,96 @@
+:root {
+    --li-color-text: var(--figma-color-text, #121330);
+    --li-color-text-brand: #08C18A;
+    --li-color-text-on-brand: #fff;
+    --li-color-text-secondary: var(--figma-color-text-secondary, #717181);
+    --li-color-text-selected: var(--figma-color-text-selected, #08C18A);
+    --li-color-text-selection: var(--figma-color-text-onselected, #121330);
+    --li-color-text-tooltip: #fff;
+    --li-color-bg: var(--figma-color-bg, #fff);
+    --li-color-bg-brand: #08C18A;
+    --li-color-bg-brand-hover: #0fa564;
+    --li-color-bg-brand-pressed: #097f52;
+    --li-color-bg-danger: #f44336;
+    --li-color-bg-secondary: var(--figma-color-bg-secondary, #fafafb);
+    --li-color-bg-selection: var(--figma-color-bg-onselected, #eee8fb);
+    --li-color-bg-tooltip: #121330;
+    --li-color-border: var(--figma-color-border, #e7e7ea);
+    --li-color-border-hover: #cef3e8;
+    --li-color-border-pressed: #08C18A;
+    --li-color-border-danger: #f44336;
+    --li-color-busy-bg: rgba(255, 255, 255, 0.75);
+    --li-shadow: 0 4px 18px 0 rgba(0, 0, 0, .1);
+}
+
+:root {
+    --li-font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+    --li-font-size-xs: 12px;
+    --li-font-size-sm: 13px;
+    --li-font-size-md: 14px;
+    --li-font-size-lg: 20px;
+    --li-font-weight: 400;
+
+    --li-space-xs: 5px;
+    --li-space-sm: 10px;
+    --li-space-md: 20px;
+    --li-space-lg: 30px;
+
+    --li-icon-size-sm: 18px;
+    --li-icon-size-md: 24px;
+
+    --li-size-field-xs: 30px;
+    --li-size-field-sm: 40px;
+    --li-size-field-md: 50px;
+
+    --li-radius: 6px;
+    --li-radius-big: 16px;
+
+    --li-line-height: 1.4;
+
+    --li-container-width-sm: 380px;
+    --li-container-width-md: 480px;
+    --li-container-width-lg: 700px;
+
+    --li-shadow: 0 4px 18px 0 rgba(0, 0, 0, .1);
+}
+
+.lordicon-wrapper {
+    display: block;
+}
+
+.lordicon-wrapper li-icon {
+    display: block;
+    width: 24px;
+    height: 24px;
+}
+
+.lordicon-wrapper li-icon:not(:defined) {
+    svg,
+    img {
+        display: block;
+        width: inherit;
+        height: inherit;
+    }
+}
+
+.lordicon-wrapper-inline-block {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.lordicon-info {
+    display: block;
+}
+
+.lordicon-info p {
+    border: 2px dashed #ccc;
+    padding: 20px;
+    text-align: center;
+    background-color: #f9f9f9;
+}
+
+.lordicon-busy {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

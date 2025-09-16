@@ -1,0 +1,42 @@
+:host {
+    display: block;
+
+    --color: black;
+    --border-color: black;
+    --size: 36px;
+
+    border: 1px solid transparent;
+    padding: 1px;
+    border-radius: calc(var(--li-radius) + 2px);
+    width: var(--size);
+    aspect-ratio: 1;
+    box-sizing: border-box;
+}
+
+:host(.active) {
+    border-color: var(--li-color-border-hover);
+}
+
+:host(.clickable:hover) {
+    cursor: pointer;
+    border-color: var(--li-color-border-hover);
+}
+
+.color {
+    width: 100%;
+    aspect-ratio: 1;
+    box-sizing: border-box;
+    background: var(--color);
+    border-radius: var(--li-radius);
+    border: 1px solid var(--border-color);
+}
+
+.transparent {
+    width: 100%;
+    aspect-ratio: 1;
+    box-sizing: border-box;
+    border-radius: var(--li-radius);
+    background: repeating-conic-gradient(#c7c7cc 0% 25%, #fff 0% 50%) 50% / 16px 16px;
+    box-sizing: border-box;
+    border: 1px solid var(--li-color-border);
+}

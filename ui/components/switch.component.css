@@ -1,0 +1,72 @@
+:host {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    cursor: pointer;
+}
+
+:host([inert]) {
+    filter: grayscale(100%);
+    opacity: 0.5;
+}
+
+:host(:not(.has-title)) #title {
+    display: none;
+}
+
+#title {
+    flex: 1;
+    padding-left: var(--li-space-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    width: 10px;
+
+    &:hover {
+        color: var(--li-color-bg-brand);
+    }
+}
+
+#switch {
+    width: 50px;
+    height: 26px;
+    border-radius: 35px;
+    position: relative;
+    box-sizing: border-box;
+    border: 1px solid var(--li-color-border);
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+#knob {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    box-sizing: border-box;
+    border: 1px solid var(--li-color-border);
+    transition: left 0.2s;
+    background: var(--li-color-bg);
+}
+
+#switch.active #knob {
+    left: 26px;
+    background: var(--li-color-bg-brand);
+    border-color: var(--li-color-bg-brand);
+}
+
+:host(.small) #switch {
+    width: 40px;
+    height: 24px;
+}
+
+:host(.small) #knob {
+    width: 18px;
+    height: 18px;
+}
+
+:host(.small) #switch.active #knob {
+    left: 17px;
+}

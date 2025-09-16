@@ -1,0 +1,24 @@
+:host {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border-radius: var(--li-radius);
+    border: 1px solid var(--li-color-border);
+    background: var(--li-color-bg-secondary);
+}
+
+:host(:hover) {
+    border-color: var(--li-color-border-hover);
+}
+
+:host(:focus-within) {
+    border-color: var(--li-color-border-pressed);
+}
+
+:host-context(.error) {
+    border-color: var(--li-color-border-danger);
+}
+
+::slotted(*) {
+    flex: 1;
+}

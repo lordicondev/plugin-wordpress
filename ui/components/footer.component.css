@@ -1,0 +1,30 @@
+:host {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--li-space-sm);
+    padding: 0 var(--li-space-sm);
+    height: var(--li-size-field-sm);
+    border-top: 1px solid var(--li-color-border);
+}
+
+.title {
+    flex: 1;
+}
+
+.actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+img {
+    display: block;
+    width: var(--li-icon-size-md);
+    height: var(--li-icon-size-md);
+    margin-left: -5px;
+}
+
+a {
+    display: block;
+}

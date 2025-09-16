@@ -1,0 +1,27 @@
+:host {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+    color: var(--li-color-text);
+}
+
+svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+}
+
+svg path {
+    stroke: currentColor;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}

@@ -1,0 +1,36 @@
+:host {
+    display: inline-flex;
+    width: var(--li-icon-size-sm);
+    height: var(--li-icon-size-sm);
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    vertical-align: middle;
+    fill: currentcolor;
+    stroke: none;
+}
+
+:host(.medium) {
+    width: var(--li-icon-size-md);
+    height: var(--li-icon-size-md);
+}
+
+svg {
+    pointer-events: none;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+:host(.clickable) {
+    cursor: pointer;
+}
+
+:host(.clickable:hover) {
+    color: var(--li-color-text-brand);
+}
+
+:host([inert]) {
+    opacity: 0.5;
+    filter: grayscale(1);
+}

@@ -1,0 +1,16 @@
+:host {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
+    gap: var(--li-space-sm);
+}
+
+li-field {
+    flex: 1;
+}
+
+p {
+    margin: 0;
+    color: var(--li-color-text-secondary);
+}

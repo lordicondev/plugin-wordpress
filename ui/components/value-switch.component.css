@@ -1,0 +1,54 @@
+:host {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    box-sizing: border-box;
+    background: var(--li-color-bg-secondary);
+    border-radius: var(--li-radius);
+    font-weight: 400;
+    font-size: var(--li-font-size-xs);
+    height: var(--li-size-field-xs);
+
+    @media (min-width: 400px) {
+        height: var(--li-size-field-sm);
+    }
+}
+
+div {
+    flex: 1;
+    text-align: center;
+    height: inherit;
+    box-sizing: border-box;
+    position: relative;
+    border-top: 1px solid var(--li-color-border);
+    border-bottom: 1px solid var(--li-color-border);
+    cursor: pointer;
+    height: var(--li-size-field-xs);
+    line-height: var(--li-size-field-xs);
+
+    @media (min-width: 400px) {
+        height: var(--li-size-field-sm);
+        line-height: var(--li-size-field-sm);
+    }
+}    
+
+div:hover, div.active {
+    color: var(--li-color-text-brand);
+    background: var(--li-color-bg);
+}
+
+div:not(:first-child) {
+    border-left: 1px solid var(--li-color-border);
+}
+
+div:first-child {
+    border-left: 1px solid var(--li-color-border);
+    border-top-left-radius: var(--li-radius);
+    border-bottom-left-radius: var(--li-radius);
+}
+
+div:last-child {
+    border-right: 1px solid var(--li-color-border);
+    border-top-right-radius: var(--li-radius);
+    border-bottom-right-radius: var(--li-radius);
+}

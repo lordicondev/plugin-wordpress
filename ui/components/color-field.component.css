@@ -1,0 +1,14 @@
+:host {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--li-space-sm);
+}
+
+li-field {
+    flex: 1;
+}
+
+li-colors-palette {
+    display: none;
+}

@@ -1,0 +1,32 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    padding: var(--li-space-sm);
+    gap: var(--li-space-sm);
+    box-sizing: border-box;
+    background: var(--li-color-bg);
+    border-radius: 10px;
+}
+
+:host(.shadow) {
+    box-shadow: var(--li-shadow);
+    border: 1px solid var(--li-color-border);
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--li-space-xs);
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--li-space-sm);
+}
+
+.row>.field-group,
+.row>span {
+    flex: 1;
+}

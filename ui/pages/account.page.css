@@ -1,0 +1,13 @@
+:host {
+    display: block;
+    margin-top: var(--li-space-md);
+}
+
+li-icon {
+    width: 120px;
+    height: 120px;
+}
+
+p {
+    margin: 0;
+}

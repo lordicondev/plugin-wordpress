@@ -1,0 +1,62 @@
+{
+    "name": "plugin-wordpress",
+    "private": true,
+    "version": "1.0.0",
+    "author": "Lordicon <dev@lordicon.com>",
+    "license": "UNLICENSED",
+    "description": "Plugin Wordpress",
+    "scripts": {
+        "start": "npm run dev",
+        "build:block": "vite build --config vite-block.config.ts",
+        "build:element": "vite build --config vite-element.config.ts",
+        "build:settings": "vite build --config vite-settings.config.ts",
+        "build": "npm run build:block && npm run build:element && npm run build:settings",
+        "dev:block": "vite build --config vite-block.config.ts --watch",
+        "dev:settings": "vite build --config vite-settings.config.ts --watch",
+        "dev": "concurrently \"npm run dev:block\" \"npm run dev:settings\""
+    },
+    "type": "module",
+    "devDependencies": {
+        "@lordicon/internal": "^0.5.0",
+        "@lordicon/element": "^2.0.1",
+        "@lordicon/utils-lottie": "^1.1.0",
+        "@lordicon/utils-svg": "^1.1.0",
+        "nanoid": "^5.0.9",
+        "inversify": "^7.3.0",
+        "reflect-metadata": "^0.2.2",
+        "lit": "^3.2.1",
+        "@lit/task": "^1.0.2",
+        "vite": "^6.2.3",
+        "vite-plugin-singlefile": "^2.2.0",
+        "concurrently": "^9.1.2",
+        "eslint": "^8.54.0",
+        "fs-extra": "^11.3.0",
+        "typescript": "^5.3.2",
+        "@types/fs-extra": "^11.0.4",
+        "@typescript-eslint/eslint-plugin": "^6.12.0",
+        "@typescript-eslint/parser": "^6.12.0",
+        "@types/node": "^22.13.13"
+    },
+    "eslintConfig": {
+        "extends": [
+            "eslint:recommended",
+            "plugin:@typescript-eslint/recommended",
+            "plugin:@figma/figma-plugins/recommended"
+        ],
+        "parser": "@typescript-eslint/parser",
+        "parserOptions": {
+            "project": "./tsconfig.json"
+        },
+        "root": true,
+        "rules": {
+            "@typescript-eslint/no-unused-vars": [
+                "error",
+                {
+                    "argsIgnorePattern": "^_",
+                    "varsIgnorePattern": "^_",
+                    "caughtErrorsIgnorePattern": "^_"
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,40 @@
+:host {
+    display: contents;
+
+    --clip-x: 0px;
+    --clip-y: 0px;
+    --clip-h: 0px;
+    --clip-w: 0px;
+}
+
+#mask {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 300;
+    background: rgba(231, 231, 234, 0.85);
+    backdrop-filter: grayscale(1);
+}
+
+#clip {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 300;
+    clip-path: polygon(
+        0% 0%,
+        0% 100%,
+        var(--clip-x) 100%,
+        var(--clip-x) var(--clip-y),
+        calc(var(--clip-x) + var(--clip-w)) var(--clip-y),
+        calc(var(--clip-x) + var(--clip-w)) calc(var(--clip-y) + var(--clip-h)),
+        var(--clip-x) calc(var(--clip-y) + var(--clip-h)),
+        var(--clip-x) 100%,
+        100% 100%,
+        100% 0%
+    );
+}

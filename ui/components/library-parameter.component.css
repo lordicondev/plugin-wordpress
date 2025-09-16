@@ -1,0 +1,56 @@
+:host {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    height: var(--li-size-field-sm);
+    border-top: 1px solid var(--li-color-border);
+    border-bottom: 1px solid var(--li-color-border);
+    padding: 0 var(--li-space-sm);
+
+    --scrollbar-width: 0px;
+}
+
+.search {
+    display: flex;
+    flex-direction: row;
+    gap: var(--li-space-xs);
+    align-items: center;
+    color: var(--li-color-text-secondary);
+    box-sizing: border-box;
+    flex: 1;
+    border-right: 1px solid var(--li-color-border);
+}
+
+.search li-input {
+    flex: 1;
+}
+
+.select {
+    flex: 1;
+    height: var(--size-field);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    height: var(--li-size-field-sm);
+    cursor: pointer;
+    box-sizing: border-box;
+    padding-right: var(--scrollbar-width);
+}
+
+.select span {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    width: 10px;
+    margin: 0 var(--li-space-sm);
+    flex: 1;
+}
+
+.select:hover,
+.select.active {
+    color: var(--li-color-text-brand);
+}
+
+.select.active li-pictogram {
+    rotate: 180deg;
+}

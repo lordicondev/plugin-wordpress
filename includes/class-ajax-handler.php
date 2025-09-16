@@ -1,0 +1,371 @@
+<?php
+namespace Lordicon;
+
+class AjaxHandler {
+    public function __construct() {
+    }
+
+    public function run() {
+        add_action('wp_ajax_lordicon_request', array($this, 'handle_request'));
+    }
+
+    public function handle_request() {
+        check_ajax_referer('lordicon_action', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_die('Unauthorized');
+        }
+
+        // Check if valid POST request
+        if ( ! isset( $_POST['endpoint'] ) ) {
+            wp_send_json_error('Invalid request.');
+            return;
+        }
+
+        // Sanitize endpoint
+        $endpoint = sanitize_text_field( wp_unslash( $_POST['endpoint'] ) );
+
+        switch ($endpoint) {
+            case 'auth_start':
+                $this->auth_start();
+                break;
+            case 'auth_check':
+                $this->auth_check();
+                break;
+            case 'logout':
+                $this->logout();
+                break;
+            case 'status':
+                $this->status();
+                break;
+            case 'variants':
+                $this->variants();
+                break;
+            case 'icons':
+                $this->icons();
+                break;
+            case 'track':
+                $this->track();
+                break;
+            case 'upload':
+                $this->upload();
+                break;
+            default:
+                wp_send_json_error('Unknown action');
+                break;
+        }
+    }
+
+    private function icons() {
+        $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+        if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'lordicon_action' ) ) {
+            wp_send_json_error('Security check failed.');
+            return;
+        }
+
+        $family   = sanitize_text_field( wp_unslash( $_POST['family'] ?? '' ) );
+        $style    = sanitize_text_field( wp_unslash( $_POST['style'] ?? '' ) );
+        $search   = sanitize_text_field( wp_unslash( $_POST['search'] ?? '' ) );
+        $index    = sanitize_text_field( wp_unslash( $_POST['index'] ?? '' ) );
+        $page     = isset( $_POST['page'] ) ? intval( wp_unslash( $_POST['page'] ) ) : 1;
+        $per_page = isset( $_POST['per_page'] ) ? intval( wp_unslash( $_POST['per_page'] ) ) : 100;
+
+        $result = API::get_instance()->icons([
+            'family'   => $family,
+            'style'    => $style,
+            'search'   => $search,
+            'index'    => $index,
+            'page'     => $page,
+            'per_page' => $per_page,
+        ]);
+
+        if ( isset( $result['error'] ) ) {
+            wp_send_json_error( $result['error'] );
+        }
+
+        wp_send_json_success([
+            'icons'  => $result['data'] ?? [],
+            'params' => [
+                'link' => $result['headers']['link'] ?? '',
+            ],
+        ]);
+    }
+
+    private function track() {
+        $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+        if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'lordicon_action' ) ) {
+            wp_send_json_error('Security check failed.');
+            return;
+        }
+
+        $family = sanitize_text_field( wp_unslash( $_POST['family'] ?? '' ) );
+        $style  = sanitize_text_field( wp_unslash( $_POST['style'] ?? '' ) );
+        $index  = isset( $_POST['index'] ) ? intval( wp_unslash( $_POST['index'] ) ) : 0;
+
+        $params = [
+            'family' => $family,
+            'style'  => $style,
+            'index'  => $index,
+        ];
+
+        $result = API::get_instance()->track( $params );
+
+        if ( isset( $result['error'] ) ) {
+            wp_send_json_error( $result['error'] );
+        }
+
+        wp_send_json_success();
+    }
+
+    private function status() {
+        $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+        if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'lordicon_action' ) ) {
+            wp_send_json_error('Security check failed.');
+            return;
+        }
+
+        $result = API::get_instance()->status();
+
+        if (isset($result['error'])) {
+            wp_send_json_error($result['error']);
+        } else {
+            wp_send_json_success($result['data']);
+        }
+    }
+
+    private function variants() {
+        $cache_key = 'lordicon_variants';
+        $cached_result = get_transient($cache_key);
+        
+        if ($cached_result !== false) {
+            wp_send_json_success($cached_result);
+            return;
+        }
+
+        $result = API::get_instance()->variants();
+
+        if (isset($result['error'])) {
+            wp_send_json_error($result['error']);
+        } else {
+            set_transient($cache_key, $result['data'], HOUR_IN_SECONDS);
+            wp_send_json_success($result['data']);
+        }
+    }
+
+    private function auth_start() {
+        $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+        if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'lordicon_action' ) ) {
+            wp_send_json_error('Security check failed.');
+            return;
+        }
+
+        $email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
+
+        if ( empty( $email ) ) {
+            wp_send_json_error( 'Email is required' );
+            return;
+        }
+
+        $result = API::get_instance()->auth_start( $email );
+
+        if ( isset( $result['error'] ) ) {
+            wp_send_json_error( $result['error'] );
+        }
+
+        wp_send_json_success( $result['data'] ?? [] );
+    }
+
+    private function auth_check() {
+        $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+        if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'lordicon_action' ) ) {
+            wp_send_json_error('Security check failed.');
+            return;
+        }
+
+        $email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
+        $code  = sanitize_text_field( wp_unslash( $_POST['code'] ?? '' ) );
+
+        if ( empty( $email ) || empty( $code ) ) {
+            wp_send_json_error( 'Email and code are required' );
+            return;
+        }
+
+        $result = API::get_instance()->auth_check( $email, $code );
+
+        if ( isset( $result['error'] ) ) {
+            wp_send_json_error( $result['error'] );
+        }
+
+        $data = $result['data'] ?? [];
+
+        if ( isset( $data['token'] ) ) {
+            $settings_json = get_option( 'lordicon_settings', '{}' );
+            $settings = json_decode( $settings_json );
+
+            if ( ! is_object( $settings ) ) {
+                $settings = new \stdClass();
+            }
+
+            $settings->token = $data['token'];
+            update_option( 'lordicon_settings', wp_json_encode( $settings ) );
+        }
+
+        wp_send_json_success();
+    }
+
+    private function logout() {
+        $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+        if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'lordicon_action' ) ) {
+            wp_send_json_error('Security check failed.');
+            return;
+        }
+
+        delete_option('lordicon_settings');
+    
+        wp_send_json_success();
+    }
+
+    private function upload() {
+        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+        if (empty($nonce) || ! wp_verify_nonce($nonce, 'lordicon_action')) {
+            wp_send_json_error('Security check failed.');
+            return;
+        }
+
+        // Check if the current user has permission to upload files
+        if (!current_user_can('upload_files')) {
+            wp_send_json_error('Insufficient permissions');
+        }
+
+        // Sanitize input fields from POST to prevent malicious input
+        $post_id = isset($_POST['post_id']) ? intval(wp_unslash($_POST['post_id'])) : 0;
+        $family  = sanitize_text_field(wp_unslash($_POST['family'] ?? ''));
+        $style   = sanitize_text_field(wp_unslash($_POST['style'] ?? ''));
+        $index   = sanitize_text_field(wp_unslash($_POST['index'] ?? ''));
+        $name    = sanitize_text_field(wp_unslash($_POST['name'] ?? ''));
+        $hash    = sanitize_text_field(wp_unslash($_POST['hash'] ?? ''));
+
+        // Ensure required fields are provided before proceeding
+        if (empty($family) || empty($style) || empty($index) || empty($name)) {
+            wp_send_json_error('Family, style, index, and name are required');
+        }
+
+        // Include WordPress media functions
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/media.php';
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+ 
+        $result = [
+            'svgAttachmentId'  => 0,
+            'jsonAttachmentId' => 0,
+        ];
+
+        // Check existing attachments
+        $existing_svg  = $this->find_existing_attachment('svg', $family, $style, $index, $name, $post_id, $hash);
+        $existing_json = $this->find_existing_attachment('json', $family, $style, $index, $name, $post_id);
+
+        if ($existing_svg)  $result['svgAttachmentId']  = $existing_svg->ID;
+        if ($existing_json) $result['jsonAttachmentId'] = $existing_json->ID;
+
+        // Copy $_FILES into a local variable 
+        $files_data = $_FILES;
+
+        // Handle SVG and JSON file uploads in a loop for cleaner code
+        foreach ([
+            'svg_file' => ['type' => 'svg', 'mime' => 'image/svg+xml'], 
+            'json_file' => ['type' => 'json', 'mime' => 'application/json']
+        ] as $input_name => $props) {
+
+            // Proceed only if a file is uploaded and there is no existing attachment
+            if (!empty($files_data[$input_name]) && $result[$props['type'].'AttachmentId'] <= 0) {
+                $file = $files_data[$input_name];
+
+                if (isset($file['tmp_name'], $file['error']) && 
+                    $file['error'] === UPLOAD_ERR_OK && 
+                    is_uploaded_file($file['tmp_name'])) {
+
+                    // Verify file type and extension to match expected type
+                    $filetype     = wp_check_filetype_and_ext($file['tmp_name'], $file['name']);
+
+                    if ($filetype['ext'] !== $props['type'] || $filetype['type'] !== $props['mime']) {
+                        wp_send_json_error('Invalid ' . strtoupper($props['type']) . ' file type.');
+                    }
+
+                    // Use WordPress media handling to store the uploaded file properly
+                    $attachment_id = media_handle_upload($input_name, $post_id);
+                    if (is_wp_error($attachment_id)) {
+                        wp_send_json_error($attachment_id->get_error_message());
+                    }
+
+                    // Update post title for easier identification in Media Library
+                    $title = sprintf('%s-%s-%s-%s', $family, $style, $index, $name);
+                    wp_update_post(['ID' => $attachment_id, 'post_title' => $title]);
+
+                    // Store custom meta for later identification of uploaded icons
+                    foreach ([
+                        '_lordicon_type'   => $props['type'],
+                        '_lordicon_family' => $family,
+                        '_lordicon_style'  => $style,
+                        '_lordicon_index'  => $index,
+                        '_lordicon_name'   => $name,
+                        '_lordicon_hash'   => $hash,
+                    ] as $meta_key => $meta_value) {
+                        update_post_meta($attachment_id, $meta_key, $meta_value);
+                    }
+
+                    // Store attachment ID in result for response
+                    $result[$props['type'].'AttachmentId'] = $attachment_id;
+                }
+            }
+        }
+
+        wp_send_json_success($result);
+    }
+
+    private function find_existing_attachment($type, $family, $style, $index, $name, $post_id = 0, $hash = null) {
+        $meta_query = array(
+            array(
+                'key' => '_lordicon_type',
+                'value' => $type
+            ),
+            array(
+                'key' => '_lordicon_family',
+                'value' => $family
+            ),
+            array(
+                'key' => '_lordicon_style',
+                'value' => $style
+            ),
+            array(
+                'key' => '_lordicon_index',
+                'value' => $index
+            ),
+            array(
+                'key' => '_lordicon_name',
+                'value' => $name
+            )
+        );
+
+        if (!empty($hash)) {
+            $meta_query[] = array(
+                'key' => '_lordicon_hash',
+                'value' => $hash
+            );
+        }
+
+        // We use a meta query here to find attachments that match specific metadata fields.
+        // Each Lordicon file (SVG or JSON) is stored as a WordPress attachment with custom meta
+        // describing its type, family, style, index, name, and optionally hash. By querying
+        // these meta fields, we can reliably locate the exact attachment corresponding to
+        // the uploaded icon without relying solely on file names or post titles.
+        $args = array(
+            'post_type' => 'attachment',
+            'post_status' => 'inherit',
+            'post_parent' => $post_id,
+            'meta_query' => $meta_query
+        );
+        
+        $attachments = get_posts($args);
+        return !empty($attachments) ? $attachments[0] : null;
+    }
+}

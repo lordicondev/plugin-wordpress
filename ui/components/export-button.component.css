@@ -1,0 +1,76 @@
+:host {
+    display: flex;
+    flex-direction: row;
+    box-sizing: border-box;
+    align-items: center;
+    color: var(--li-color-text-on-brand);
+    font-weight: 500;
+    position: relative;
+    cursor: pointer;
+
+    --progress: 0%;
+}
+
+:host div:first-of-type {
+    border-top-left-radius: var(--li-radius);
+    border-bottom-left-radius: var(--li-radius);
+}
+
+:host div:last-of-type {
+    border-top-right-radius: var(--li-radius);
+    border-bottom-right-radius: var(--li-radius);
+}
+
+.export {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 0 var(--li-space-md);
+    text-align: center;
+    background: var(--li-color-bg-brand);
+    height: var(--li-size-field-sm);
+}
+
+.export:hover {
+    background: var(--li-color-bg-brand-hover);
+}
+
+.export:active {
+    background: var(--li-color-bg-brand-pressed);
+}
+
+:host(.busy) .export {
+    background: linear-gradient(90deg, var(--li-color-bg-brand) 0%, var(--li-color-bg-brand) 50%, var(--li-color-bg-brand-hover) 50%); 
+    background-size: 200% 100%;
+    background-position: calc(-1 * var(--progress, 0%));
+
+    &:after {
+        display: block;
+        content: var(--progress, 0%);
+    }
+}
+
+.more {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    background: var(--li-color-bg-brand);
+    height: var(--li-size-field-sm);
+    aspect-ratio: 1;
+    border-left: 1px solid var(--li-color-bg);
+}
+
+.more:hover {
+    background: var(--li-color-bg-brand-hover);
+}
+
+.more:active {
+    background: var(--li-color-bg-brand-pressed);
+}
+
+li-list {
+    display: none;
+}

@@ -1,0 +1,44 @@
+{
+    "apiVersion": 2,
+    "name": "lordicon/block",
+    "title": "Lordicon",
+    "category": "widgets",
+    "icon": {
+        "src": "lordicon-block-icon"
+    },
+    "description": "Animated Icon Block.",
+    "supports": {
+        "html": false,
+        "alignWide": false,
+        "anchor": true,
+        "customClassName": true,
+        "multiple": true,
+        "reusable": true
+    },
+    "textdomain": "lordicon",
+    "attributes": {
+        "icon": {
+            "type": "object",
+            "default": null
+        },
+        "jsonAttachmentId": {
+            "type": "number",
+            "default": 0
+        },
+        "svgAttachmentId": {
+            "type": "number",
+            "default": 0
+        },
+        "properties": {
+            "type": "object",
+            "default": null
+        },
+        "anchor": {
+            "type": "string"
+        },
+        "className": {
+            "type": "string"
+        }
+    },
+    "editorScript": "lordicon-block-js"
+}

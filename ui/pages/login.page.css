@@ -1,0 +1,28 @@
+:host {
+    display: block;
+    margin-top: var(--li-space-md);
+}
+
+li-icon {
+    width: 120px;
+    height: 120px;
+}
+
+p {
+    margin: 0;
+}
+
+a {
+    color: var(--li-color-text-brand);
+    text-decoration: none;
+}
+
+.fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--li-space-sm);
+}
+
+.fields.small {
+    max-width: var(--li-container-width-sm);
+}

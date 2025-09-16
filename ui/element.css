@@ -1,0 +1,34 @@
+.lordicon-wrapper {
+    display: block;
+}
+
+.lordicon-wrapper lord-icon {
+    display: block;
+    width: 24px;
+    height: 24px;
+}
+
+.lordicon-wrapper lord-icon:not(:defined) {
+    svg,
+    img {
+        display: block;
+        width: inherit;
+        height: inherit;
+    }
+}
+
+.lordicon-wrapper-inline-block {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.lordicon-info {
+    display: block;
+}
+
+.lordicon-info p {
+    border: 2px dashed #ccc;
+    padding: 20px;
+    text-align: center;
+    background-color: #f9f9f9;
+}

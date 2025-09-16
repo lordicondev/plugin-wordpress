@@ -1,0 +1,18 @@
+:host(.column) {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    gap: var(--li-space-sm);
+}
+
+:host(.flex) {
+    flex: 1;
+}
+
+:host(.icon-grid) {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    justify-content: center;
+    gap: var(--li-space-sm);
+    padding: var(--li-space-sm);
+}

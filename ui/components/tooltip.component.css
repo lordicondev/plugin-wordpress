@@ -1,0 +1,22 @@
+:host {
+    display: block;
+    position: absolute;
+    outline: none;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    padding: 10px 0;
+    box-sizing: border-box;
+}
+
+#tooltip {
+    display: inline;
+    outline: none;
+    font-size: var(--li-font-size-xs);
+    background: var(--li-color-bg-tooltip);
+    color: var(--li-color-text-tooltip);
+    padding: 5px 8px;
+    border-radius: var(--li-radius);
+    will-change: transform, opacity;
+}

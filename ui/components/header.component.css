@@ -1,0 +1,34 @@
+:host {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--li-space-sm);
+    padding: 0 var(--li-space-sm);
+    height: var(--li-size-field-sm);
+    border-top: 1px solid var(--li-color-border);
+    border-bottom: 1px solid var(--li-color-border);
+}
+
+.title {
+    flex: 1;
+    text-align: center;
+}
+
+.back_action {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--li-space-xs);
+    cursor: pointer;
+}
+
+.back_action:hover {
+    color: var(--li-color-text-brand);
+}
+
+.action {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--li-space-xs);
+}
