@@ -50,7 +50,6 @@ class Plugin {
             $this->loader->add_action('enqueue_block_editor_assets', $this, 'enqueue_block_editor_assets');
             $this->loader->add_action('admin_menu', $this, 'settings_init_menu');
             $this->loader->add_action('admin_init', $this, 'settings_handle_form_submission');
-            $this->loader->add_action('admin_print_scripts', $this, 'add_editor_config');
 
             $this->loader->add_filter('plugin_row_meta', $this, 'plugin_links', 10, 3);
         } else {
@@ -64,13 +63,12 @@ class Plugin {
         // Block registration (both admin and frontend)
         $this->loader->add_action('init', $this, 'register_block_type');
 
-
         $this->handler = new AjaxHandler();
     }
 
     public function enqueue_admin_assets() {
         if (is_settings()) {
-            wp_enqueue_script_module(
+            wp_enqueue_script(
                 'lordicon-settings-script',
                 plugins_url('/dist/settings.js', dirname(__FILE__)),
                 array(),
@@ -83,7 +81,27 @@ class Plugin {
                 array(),
                 Constants::plugin_version()
             );
+        
+            $this->patch_module('lordicon-settings-script', 'settings');
         }
+    }
+
+    public function enqueue_block_editor_assets() {
+        wp_enqueue_script(
+            'lordicon-block-js',
+            plugins_url('/dist/block.js', dirname(__FILE__)),
+            array('wp-blocks', 'wp-element', 'wp-components', 'wp-block-editor', 'wp-i18n'),
+            Constants::plugin_version(),
+        );
+
+        wp_enqueue_style(
+            'lordicon-block-css',
+            plugins_url('/dist/block.css', dirname(__FILE__)),
+            array('wp-edit-blocks'),
+            Constants::plugin_version()
+        );
+
+        $this->patch_module('lordicon-block-js', 'editor');
     }
 
     public function enqueue_frontend_assets() {
@@ -102,53 +120,44 @@ class Plugin {
         );    
     }
 
-    public function enqueue_block_editor_assets() {
-        wp_enqueue_script_module(
-            'lordicon-block-js',
-            plugins_url('/dist/block.js', dirname(__FILE__)),
-            array('wp-blocks', 'wp-element', 'wp-components', 'wp-block-editor', 'wp-i18n'),
-            Constants::plugin_version(),
-        );
+    private function patch_module(string $scriptHandle, string $context) {
+        $url     = admin_url('admin-ajax.php');
+        $nonce   = wp_create_nonce('lordicon_action');
+        $status  = API::get_instance()->status()['data'];
+        $variants = $status ? API::get_instance()->variants()['data'] : [];
 
-        wp_enqueue_style(
-            'lordicon-block-css',
-            plugins_url('/dist/block.css', dirname(__FILE__)),
-            array('wp-edit-blocks'),
-            Constants::plugin_version()
-        );
-    }
-
-    public function add_editor_config() {
-        $screen = get_current_screen();
-        if ($screen && ($screen->is_block_editor() || is_settings())) {
-            $url = admin_url('admin-ajax.php');
-            $nonce = wp_create_nonce('lordicon_action');
-            $status = API::get_instance()->status()['data'];
-            $context = $screen->is_block_editor() ? 'editor' : 'settings';
-            $variants = $status ? API::get_instance()->variants()['data'] : [];
-
-            // Safely get post ID without using $_GET
-            $post_id = 0;
-            if ($screen->is_block_editor()) {
-                $post = get_post(); // WP function; avoids direct $_GET access
-                if ($post && $post->ID) {
-                    $post_id = $post->ID;
-                }
+        // Safely get post ID without using $_GET
+        $post_id = 0;
+        if ($context === 'editor') {
+            $post = get_post();
+            if ($post && $post->ID) {
+                $post_id = $post->ID;
             }
-
-            $config = [
-                'url'      => $url,
-                'nonce'    => $nonce,
-                'status'   => $status,
-                'variants' => $variants,
-                'postId'   => $post_id,
-                'context'  => $context,
-            ];
-
-            echo '<script type="text/javascript">';
-            echo 'window.__LORDICON__ = ' . wp_json_encode($config) . ';';
-            echo '</script>';
         }
+
+        $config = [
+            'url'      => $url,
+            'nonce'    => $nonce,
+            'status'   => $status,
+            'variants' => $variants,
+            'postId'   => $post_id,
+            'context'  => $context,
+        ];
+
+        wp_add_inline_script(
+            $scriptHandle,
+            'window.__LORDICON__ = ' . wp_json_encode($config) . ';',
+            'after'
+        );
+
+        // Patch the script tag to use type="module"
+        add_filter('script_loader_tag', function ($tag, $handle, $src) use ($scriptHandle) {
+            if ($scriptHandle !== $handle) return $tag;
+
+            $search = sprintf('id="%s-js"', $scriptHandle);
+            $replace = $search . ' type="module"';
+            return str_replace($search, $replace, $tag);
+        }, 10, 3);
     }
 
     public function register_block_type() {
