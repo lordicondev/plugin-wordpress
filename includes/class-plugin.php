@@ -73,6 +73,7 @@ class Plugin {
                 plugins_url('/dist/settings.js', dirname(__FILE__)),
                 array(),
                 Constants::plugin_version(),
+                false,
             );
 
             wp_enqueue_style(
@@ -92,6 +93,7 @@ class Plugin {
             plugins_url('/dist/block.js', dirname(__FILE__)),
             array('wp-blocks', 'wp-element', 'wp-components', 'wp-block-editor', 'wp-i18n'),
             Constants::plugin_version(),
+            false,
         );
 
         wp_enqueue_style(
