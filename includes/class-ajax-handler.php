@@ -267,25 +267,27 @@ class AjaxHandler {
         if ($existing_svg)  $result['svgAttachmentId']  = $existing_svg->ID;
         if ($existing_json) $result['jsonAttachmentId'] = $existing_json->ID;
 
-        // Copy $_FILES into a local variable 
-        $files_data = $_FILES;
-
         // Handle SVG and JSON file uploads in a loop for cleaner code
         foreach ([
             'svg_file' => ['type' => 'svg', 'mime' => 'image/svg+xml'], 
             'json_file' => ['type' => 'json', 'mime' => 'application/json']
         ] as $input_name => $props) {
-
             // Proceed only if a file is uploaded and there is no existing attachment
-            if (!empty($files_data[$input_name]) && $result[$props['type'].'AttachmentId'] <= 0) {
-                $file = $files_data[$input_name];
+            if (isset($_FILES[$input_name], $_FILES[$input_name]['tmp_name']) && $result[$props['type'].'AttachmentId'] <= 0) {
+                // Sanitize file name
+                $filename = isset($_FILES[$input_name]['name']) ? sanitize_file_name(wp_unslash($_FILES[$input_name]['name'])) : '';
+                $_FILES[$input_name]['name'] = $filename;
 
-                if (isset($file['tmp_name'], $file['error']) && 
-                    $file['error'] === UPLOAD_ERR_OK && 
-                    is_uploaded_file($file['tmp_name'])) {
+                $tmp_name = isset($_FILES[$input_name]['tmp_name']) ? wp_normalize_path(sanitize_text_field($_FILES[$input_name]['tmp_name'])) : '';
 
+                if (
+                    $tmp_name &&
+                    isset($_FILES[$input_name]['error']) &&
+                    $_FILES[$input_name]['error'] === UPLOAD_ERR_OK &&
+                    is_uploaded_file($tmp_name)
+                ) {
                     // Verify file type and extension to match expected type
-                    $filetype     = wp_check_filetype_and_ext($file['tmp_name'], $file['name']);
+                    $filetype = wp_check_filetype_and_ext($tmp_name, $filename);
 
                     if ($filetype['ext'] !== $props['type'] || $filetype['type'] !== $props['mime']) {
                         wp_send_json_error('Invalid ' . strtoupper($props['type']) . ' file type.');
