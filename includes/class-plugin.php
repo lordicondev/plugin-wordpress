@@ -238,7 +238,7 @@ class Plugin {
 
     public function prepare_json_attachment_for_js($response, $attachment, $meta) {
         if ($response['mime'] === 'application/json') {
-            $response['icon'] = plugins_url('assets/lordicon-icon.png', dirname(__FILE__));
+            $response['icon'] = plugins_url('assets/lordicon-icon.svg', dirname(__FILE__));
             
             if (get_post_meta($attachment->ID, '_lordicon_type', true) === 'json') {
                 $response['subtype'] = 'lordicon-json';
