@@ -1,17 +1,22 @@
 :host {
+    /* WordPress: the panel sits directly under the editor sidebar chrome. */
+    border-top: 1px solid var(--li-color-border);
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: var(--li-space-sm);
     padding: 0 var(--li-space-sm);
     height: var(--li-size-field-sm);
-    border-top: 1px solid var(--li-color-border);
     border-bottom: 1px solid var(--li-color-border);
 }
 
 .title {
     flex: 1;
+    min-width: 0;
     text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .back_action {

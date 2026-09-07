@@ -5,6 +5,7 @@ export * from './colors';
 export * from './contants';
 export * from './icon';
 export * from './jwt';
-export * from './progress';
+export * from './properties';
+export * from './supports';
 export * from './text';
 export * from './url';

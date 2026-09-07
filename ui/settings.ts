@@ -3,46 +3,69 @@ import { defineIconElement } from './helpers';
 
 import { AccountPage, LoginPage, WelcomePage } from './pages';
 
+/**
+ * Entry point for the wp-admin settings screen.
+ *
+ * There is no router here — the screen is three states deep at most, so it swaps the whole
+ * container instead. `status` comes from PHP via `window.__LORDICON__` and is re-read from
+ * the login response, which is why it is module state rather than a parameter.
+ */
+
+// Before any page is constructed: <li-icon> has to exist by the time a page renders one.
+defineIconElement();
+
 const container = document.getElementById('lordicon')!;
 
 let status = __LORDICON__.status || null;
 
-function reload() {
-    container.innerHTML = '';
+/**
+ * Signed-in view. Logging out drops the status and falls back to the welcome screen.
+ */
+function accountPage(): HTMLElement {
+    const page = new AccountPage();
+    page.status = status;
 
-    let element: HTMLElement | null = null;
+    page.addEventListener('logout', () => {
+        status = null;
+        show();
+    });
 
-    if (status?.user) {
-        let accountPage = element = new AccountPage();
-        accountPage.status = status;
-
-        accountPage.addEventListener('logout', () => {
-            status = null;
-            reload();
-        });
-    } else {
-        let welcomePage = element = new WelcomePage();
-
-        welcomePage.addEventListener('finish', () => {
-            container.innerHTML = '';
-
-            let loginPage = new LoginPage();
-            loginPage.addEventListener('login', (event: Event) => {
-                const data = (event as CustomEvent<{ status: any, email: string }>).detail;
-                status = data.status;
-                reload();
-            });
-            container.appendChild(loginPage);
-        });
-    }
-
-    if (element) {
-        container.appendChild(element);
-    }
+    return page;
 }
 
-// Reload the page on status change.
-reload();
+/**
+ * First-run view. Its `finish` event moves on to the login form.
+ */
+function welcomePage(): HTMLElement {
+    const page = new WelcomePage();
 
-// Define icon element globally.
-defineIconElement();
+    page.addEventListener('finish', () => {
+        container.replaceChildren(loginPage());
+    });
+
+    return page;
+}
+
+/**
+ * Email plus one-time code. On success the new status is adopted and the screen re-renders,
+ * which lands on the account page.
+ */
+function loginPage(): HTMLElement {
+    const page = new LoginPage();
+
+    page.addEventListener('login', (event: Event) => {
+        status = (event as CustomEvent<{ status: unknown, email: string }>).detail.status;
+        show();
+    });
+
+    return page;
+}
+
+/**
+ * Renders whichever page the current status calls for.
+ */
+function show() {
+    container.replaceChildren(status?.user ? accountPage() : welcomePage());
+}
+
+show();

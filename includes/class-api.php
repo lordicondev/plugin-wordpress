@@ -1,6 +1,10 @@
 <?php
 namespace Lordicon;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 class API {
     private static $instance = null;
 
@@ -18,23 +22,27 @@ class API {
         return self::$instance;
     }
 
+    /**
+     * Ensures a usable API token.
+     *
+     * Falls back to a guest token, which is what gives a signed-out site access to the free
+     * icon set.
+     *
+     * @return array Either a token or an error.
+     */
     public function autologin() {
-        // jeśli mamy token w ustawieniach, zwracamy go
         if (!empty($this->settings->token)) {
             return array('token' => $this->settings->token);
         }
 
-        // jeśli brak tokena - próbujemy zalogować jako guest
         $response = $this->auth_guest();
 
         if (!empty($response['data']['token'])) {
-            // zapisz nowy token w ustawieniach WP
             $this->settings->token = $response['data']['token'];
-            update_option('lordicon_settings', json_encode($this->settings));
+            update_option('lordicon_settings', wp_json_encode($this->settings));
             return array('token' => $this->settings->token);
         }
 
-        // jeśli nie udało się pobrać tokena
         return array('error' => $response['error'] ?? 'Autologin failed');
     }
 
@@ -58,7 +66,7 @@ class API {
         
         $args = array(
             'headers' => array('Content-Type' => 'application/json'),
-            'body' => json_encode(array('email' => $email)),
+            'body' => wp_json_encode(array('email' => $email)),
             'method' => 'POST',
             'timeout' => 15,
         );
@@ -73,7 +81,7 @@ class API {
 
         $args = array(
             'headers' => array('Content-Type' => 'application/json'),
-            'body' => json_encode(array('email' => $email, 'code' => $code)),
+            'body' => wp_json_encode(array('email' => $email, 'code' => $code)),
             'method' => 'PATCH',
             'timeout' => 15,
         );
@@ -176,7 +184,7 @@ class API {
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Bearer ' . ($token),
             ),
-            'body' => json_encode($params),
+            'body' => wp_json_encode($params),
             'method' => 'POST',
             'timeout' => 15,
         );

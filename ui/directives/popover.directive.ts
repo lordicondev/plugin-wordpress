@@ -7,16 +7,31 @@ type POPOVER_PLACEMENTS = 'menu' | 'select';
 
 const MARGIN = 10;
 
-export function createPopover() {
-    return new Popover();
+export interface PopoverOptions {
+    /** Runs after the popover is attached and positioned. */
+    onOpened?: (element: HTMLElement) => void;
+    /** Runs after the popover is detached. */
+    onClosed?: (element: HTMLElement) => void;
+}
+
+export function createPopover(options: PopoverOptions = {}) {
+    return new Popover(options);
 }
 
 class Popover {
     _element?: HTMLElement;
     opened: boolean = false;
 
+    constructor(protected options: PopoverOptions = {}) {
+    }
+
     register(element: HTMLElement) {
-        element.style.display = 'none';
+        // Hidden only while closed. Re-registration happens mid-life — Lit tears the directive
+        // down and rebuilds it when the element is moved into the overlay outlet, and again on
+        // any re-render of the host — and hiding unconditionally would blank an open popover.
+        if (!this.opened) {
+            element.style.display = 'none';
+        }
 
         this._element = element;
     }
@@ -33,6 +48,8 @@ class Popover {
         OverlayOutletComponent.instance.detachElement(this._element!);
 
         this.opened = false;
+
+        this.options.onClosed?.(this._element!);
     }
 
     async open(
@@ -69,15 +86,15 @@ class Popover {
             },
         })
 
-        let zIndex: string = '' + index;
+        const zIndex: string = '' + index;
         let left: string = '';
         let top: string = '';
         let right: string = '';
         let bottom: string = '';
-        let maxWidth: string = '100vw';
+        const maxWidth: string = '100vw';
         let maxHeight: string = '100vh';
         let width: string = '';
-        let height: string = '';
+        const height: string = '';
 
         if (placement === 'menu') {
             const ww = window.innerWidth;
@@ -136,11 +153,17 @@ class Popover {
         });
 
         this.opened = true;
+
+        this.options.onOpened?.(list);
     }
 }
 
 class PopoverDirective extends AsyncDirective {
     popover?: Popover;
+
+    /** Kept across a disconnect, so `reconnected` knows what to re-bind. */
+    private element?: HTMLElement;
+    private boundPopover?: Popover;
 
     constructor(partInfo: PartInfo) {
         super(partInfo);
@@ -155,6 +178,9 @@ class PopoverDirective extends AsyncDirective {
 
     update(part: any, [popover]: [Popover]) {
         const element = part.element as HTMLElement;
+
+        this.element = element;
+        this.boundPopover = popover;
 
         if (popover && element) {
             if (this.popover !== popover) {
@@ -173,7 +199,17 @@ class PopoverDirective extends AsyncDirective {
         this.cleanup();
     }
 
+    /**
+     * Lit disconnects the directive when the element it sits on is moved — which is exactly
+     * what opening a popover does, since the content is relocated into the overlay outlet — and
+     * does not re-render on reconnect. Re-binding here keeps the controller and its element
+     * together across that move.
+     */
     reconnected() {
+        if (this.element && this.boundPopover) {
+            this.boundPopover.register(this.element);
+            this.popover = this.boundPopover;
+        }
     }
 
     private cleanup() {

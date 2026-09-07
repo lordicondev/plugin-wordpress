@@ -2,71 +2,57 @@
     display: inline-flex;
     flex-direction: row;
     align-items: center;
+    user-select: none;
     cursor: pointer;
 }
 
-:host([inert]) {
-    filter: grayscale(100%);
-    opacity: 0.5;
-}
-
-:host(:not(.has-title)) #title {
-    display: none;
-}
-
-#title {
-    flex: 1;
-    padding-left: var(--li-space-sm);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-    width: 10px;
-
-    &:hover {
-        color: var(--li-color-bg-brand);
-    }
-}
-
 #switch {
-    width: 50px;
-    height: 26px;
-    border-radius: 35px;
     position: relative;
-    box-sizing: border-box;
-    border: 1px solid var(--li-color-border);
+    width: 25px;
+    height: 16px;
+    border-radius: 16px;
+    background: var(--li-color-border-strong);
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.5);
+    flex: none;
 }
 
 #knob {
-    width: 20px;
-    height: 20px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     position: absolute;
-    top: 2px;
-    left: 2px;
+    top: 3px;
+    left: 3px;
     box-sizing: border-box;
-    border: 1px solid var(--li-color-border);
-    transition: left 0.2s;
     background: var(--li-color-bg);
+    transition: left 0.2s;
+}
+
+#switch.active {
+    background: var(--li-color-brand-subtle);
 }
 
 #switch.active #knob {
-    left: 26px;
-    background: var(--li-color-bg-brand);
-    border-color: var(--li-color-bg-brand);
+    left: 12px;
+    background: var(--li-color-brand);
 }
 
-:host(.small) #switch {
-    width: 40px;
-    height: 24px;
+#label {
+    flex: 1;
+    margin-left: var(--li-space-xs);
+    color: var(--li-color-text-secondary);
+    font-family: var(--li-font-family);
+    font-size: var(--li-font-size-xm);
+    font-weight: var(--li-font-weight-medium);
+    line-height: var(--li-line-height);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-:host(.small) #knob {
-    width: 18px;
-    height: 18px;
-}
-
-:host(.small) #switch.active #knob {
-    left: 17px;
+:host([disabled]),
+:host([inert]) {
+    filter: grayscale(100%);
+    opacity: 0.5;
+    cursor: not-allowed;
 }

@@ -6,7 +6,8 @@ if (!defined('ABSPATH')) {
 }
 
 class Constants {
-    const PLUGIN_VERSION = '1.0.0';
+    // Must match the `Version` header in lordicon.php and `Stable tag` in readme.txt.
+    const PLUGIN_VERSION = '1.1.0';
 	const PLUGIN_NAME = 'lordicon';
 	const PLUGIN_BASENAME = 'lordicon/lordicon.php';
     const APP_NAME = 'wp';

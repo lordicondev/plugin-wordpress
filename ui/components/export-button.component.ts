@@ -2,22 +2,22 @@ import { html, LitElement, PropertyValues, unsafeCSS } from "lit";
 import { customElement, property, query } from 'lit/decorators.js';
 import { createPopover, popover, tooltip } from "../directives";
 import CSS from './export-button.component.css?raw';
-import { ListComponent } from "./list.component";
+import { ExportFormat } from "../types";
+import { ListComponent, ListOption } from "./list.component";
 
 interface ExportFormatChangeEvent {
-    value: string;
-}
-
-interface ExportFormatItem {
-    id: string;
-    title: string;
+    value: ExportFormat;
 }
 
 const LABEL_FORMAT = `More formats`;
 
-const FORMATS: ExportFormatItem[] = [
-    { id: 'json', title: 'Interaction' },
-    { id: 'svg', title: 'SVG' },
+/**
+ * What the block can insert. WordPress embeds files rather than rendering images, so there
+ * are two: the Lottie itself, played on the page, or a single customised frame of artwork.
+ */
+const FORMATS: ListOption<ExportFormat>[] = [
+    { value: 'json', title: 'Interactive', description: 'Animated, responds to the visitor' },
+    { value: 'svg', title: 'SVG', description: 'Vector, single frame' },
 ];
 
 @customElement('li-export-button')
@@ -35,10 +35,10 @@ export class ExportButtonComponent extends LitElement {
     selected: boolean = false;
 
     @property({ type: String })
-    format: 'svg' | 'json' = 'json';
+    format: ExportFormat = 'json';
 
     @property({ type: Array })
-    items: ExportFormatItem[] = FORMATS;
+    items: ListOption<ExportFormat>[] = FORMATS;
 
     timer: any = null;
 
@@ -116,7 +116,7 @@ export class ExportButtonComponent extends LitElement {
             <div class="more" @click=${this.actionFormat} ${tooltip(LABEL_FORMAT)}>
                 <li-pictogram icon="arrowDown"></li-pictogram>
             </div>
-            <li-list class="shadow" .items=${this.items} @change=${this.formatChange} ${popover(this._popover)}></li-list>
+            <li-list class="shadow" .options=${this.items} .value=${this.format} @change=${this.formatChange} ${popover(this._popover)}></li-list>
         ` : null;
 
         return html`
@@ -133,13 +133,13 @@ export class ExportButtonComponent extends LitElement {
     }
 
     get formatLabel() {
-        let prefix = this.selected ? 'Replace' : 'Insert';
+        const prefix = this.selected ? 'Replace' : 'Insert';
 
         switch (this.format) {
+            case 'json':
+                return `${prefix} icon`;
             case 'svg':
                 return `${prefix} SVG`;
-            case 'json':
-                return `${prefix} Interaction`;
             default:
                 return prefix;
         }

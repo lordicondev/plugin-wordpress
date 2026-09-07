@@ -11,18 +11,18 @@ interface StateGridChangeEvent {
 }
 
 function handleTitle(item: IconState) {
-    const [state, ...name] = item.name.split('-');
+    const [_state, ...name] = item.name.split('-');
 
     return name.join('-');
 }
 
-function renderGroup(this: StateGridComponent, items: IconState[], group: string) {
+function renderGroup(this: StateGridComponent, items: IconState[], _group: string) {
     if (items.length == 0) {
         return null;
     }
 
     return html`
-        ${repeat(items, (c: IconState) => c.name, (c, i) => html`
+        ${repeat(items, (c: IconState) => c.name, (c) => html`
             <div ${tooltip(c.name)} class=${classMap({ active: c.name == this.value, item: true })} @click=${this.select.bind(this, c)}>
                 <li-state-preview
                     .animation=${this.animation}

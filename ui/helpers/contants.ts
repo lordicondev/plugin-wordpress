@@ -24,7 +24,7 @@ export const STYLES_PRIORITY = [
     'wired-flat',
     'wired-lineal',
     'wired-gradient',
-    'system-regular',
+    'system-outline',
     'system-solid',
     'doodle-outline',
     'doodle-black',

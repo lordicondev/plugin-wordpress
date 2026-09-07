@@ -66,7 +66,7 @@ export class IconTileComponent extends LitElement {
                     ${preview}
                 </li-icon>
                 
-                <span class="title">${this.title}</span>
+                <span class="title" ${tooltip(this.title, { whenTruncated: true })}>${this.title}</span>
                 
                 ${premium}
                 ${states}

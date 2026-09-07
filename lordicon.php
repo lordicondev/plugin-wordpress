@@ -3,13 +3,14 @@
  * Plugin Name: Lordicon
  * Plugin URI: https://lordicon.com/wordpress-plugin
  * Description: Insert and customize interactive, animated icons.
- * Version: 1.0
+ * Version: 1.1.0
  * Author: Lordicon
  * Author URI: https://lordicon.com/
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Requires at least: 6.7
+ * Requires PHP: 7.4
  * Text Domain: lordicon
- * Domain Path: /languages
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -18,9 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require plugin_dir_path( __FILE__ ) . 'includes/class-plugin.php';
 
-function run_lordicon_plugin() {
+function lordicon_run_plugin() {
 	$plugin = new \Lordicon\Plugin();
 	$plugin->run();
 }
 
-run_lordicon_plugin();
+lordicon_run_plugin();

@@ -1,4 +1,4 @@
-declare const __ENVIRONMENT__: 'BLOCK' | 'SETTINGS';
+declare const __ENVIRONMENT__: 'BLOCK' | 'SETTINGS' | 'ELEMENT';
 declare const __APP__: string;
 declare const __TITLE__: string;
 declare const __WEBSITE__: string;
@@ -11,6 +11,7 @@ declare const __LORDICON__: {
     status: any,
     variants: any,
     postId?: number,
+    elementUrl: string,
 };
 
 declare module '*?raw' {

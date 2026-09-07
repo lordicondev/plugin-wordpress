@@ -1,8 +1,5 @@
-import { LitElement, unsafeCSS } from "lit";
-import { customElement } from 'lit/decorators.js';
 import { OverlayOutletComponent } from "./overlay-outlet.component";
 import { ToastComponent } from './toast.component';
-import CSS from './toasts.component.css?raw';
 
 /**
  * Toast error interface.
@@ -14,6 +11,13 @@ interface ToastError {
     message: string;
 }
 
+/**
+ * Shows a transient message.
+ *
+ * There is no container component: each toast is attached straight to the overlay outlet and
+ * detached when it hides. A `<li-toasts>` element used to be declared here as that container,
+ * but nothing ever rendered or instantiated it.
+ */
 export async function showToast(message: string): Promise<void>
 export async function showToast(error: ToastError): Promise<void>
 export async function showToast(message: any) {
@@ -34,13 +38,4 @@ export async function showToast(message: any) {
     toast.addEventListener("hide", () => {
         OverlayOutletComponent.instance.detachElement(toast);
     });
-}
-
-@customElement('li-toasts')
-export class ToastsComponent extends LitElement {
-    public show(message: string) {
-        showToast(message);
-    }
-
-    static styles = unsafeCSS(CSS);
 }

@@ -1,0 +1,31 @@
+# Files and directories excluded from the distributable plugin.
+#
+# The repository is not the product. Everything below exists to build, test or document the
+# plugin, and none of it should reach a site that installs it — so `npm run package` copies
+# only what is not listed here.
+#
+# One line per path or glob, matched against the path relative to the plugin root.
+
+# Version control and editor state
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# Build sources and toolchain
+ui
+.distignore
+
+# Developer-facing readme. Users get readme.txt, which WordPress renders on the plugin page.
+README.md
+
+# Local development environment
+node_modules
+*.log
+
+# Credentials — belt and braces; ui/ is excluded wholesale above
+.npmrc
+
+# Output of this very step
+*.zip

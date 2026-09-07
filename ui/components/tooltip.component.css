@@ -6,17 +6,20 @@
     left: 0;
     top: 0;
     pointer-events: none;
-    padding: 10px 0;
+    padding: var(--li-space-sm) 0;
     box-sizing: border-box;
 }
 
 #tooltip {
-    display: inline;
+    display: block;
     outline: none;
-    font-size: var(--li-font-size-xs);
+    padding: 2px 7px;
+    border-radius: var(--li-radius-md);
     background: var(--li-color-bg-tooltip);
     color: var(--li-color-text-tooltip);
-    padding: 5px 8px;
-    border-radius: var(--li-radius);
+    font-family: var(--li-font-family);
+    font-size: var(--li-font-size-xs);
+    font-weight: var(--li-font-weight);
+    line-height: var(--li-line-height-lg);
     will-change: transform, opacity;
 }

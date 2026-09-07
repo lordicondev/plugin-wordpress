@@ -1,0 +1,105 @@
+/*
+ * Design tokens shared by every Lit component in the plugin.
+ *
+ * Ported from the Figma plugin's `index.css`, which is in turn taken from the portal's
+ * `styles/base/variables.scss`, so the three products look like one family. Two differences,
+ * both because of where this one runs:
+ *
+ * 1. **No `--figma-color-*` bindings.** Figma publishes those into its plugin iframe and swaps
+ *    them with the host theme. There is no such host here, so each token carries the portal
+ *    value directly rather than a fallback that always applied.
+ * 2. **No dark palette.** The WordPress admin has colour schemes, not a theme signal a
+ *    stylesheet can bind to, so the plugin commits to the light palette.
+ *
+ * Single source: the build writes it out as both block.css (editor sidebar) and settings.css
+ * (wp-admin settings screen), which used to be two hand-maintained copies.
+ */
+
+:root {
+    /* Brand palette — fixed in both themes. */
+    --li-color-brand: #08c18a;
+    --li-color-brand-hover: #07a475;
+    --li-color-brand-pressed: #057d5a;
+    --li-color-brand-subtle: #e6f9f3;
+    --li-color-on-brand: #ffffff;
+
+    --li-color-danger: #f44336;
+    --li-color-danger-hover: #dc3c31;
+    --li-color-danger-subtle: #fdd9d7;
+
+    --li-color-premium: #7542f5;
+    --li-color-premium-hover: #693bdd;
+    --li-color-premium-subtle: #ede7fc;
+
+    /* Surfaces — the host theme decides, the portal palette is the fallback. */
+    --li-color-bg: #ffffff;
+    --li-color-bg-secondary: #f6f6f7;
+    --li-color-bg-field: #f6f6f7;
+    --li-color-bg-hover: #ededf0;
+    --li-color-bg-pressed: #e3e3e6;
+    --li-color-bg-selection: #e6f9f3;
+    --li-color-bg-tooltip: #121330;
+    --li-color-busy-bg: rgba(255, 255, 255, 0.75);
+
+    /* Text. */
+    --li-color-text: #121330;
+    --li-color-text-secondary: #717182;
+    --li-color-text-brand: var(--li-color-brand);
+    --li-color-text-on-brand: var(--li-color-on-brand);
+    --li-color-text-selected: #08c18a;
+    --li-color-text-selection: #121330;
+    --li-color-text-tooltip: #ffffff;
+
+    /* Borders. */
+    --li-color-border: #e3e3e6;
+    --li-color-border-strong: #b8b8c1;
+    --li-color-border-hover: #b8b8c1;
+    --li-color-border-focus: var(--li-color-brand);
+    --li-color-border-danger: var(--li-color-danger);
+
+    --li-shadow: 0 4px 18px 0 rgba(0, 0, 0, .1);
+}
+
+:root {
+    --li-font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+
+    --li-font-size-xs: 11px;
+    --li-font-size-xm: 12px;
+    --li-font-size-sm: 13px;
+    --li-font-size-md: 14px;
+    --li-font-size-lg: 20px;
+
+    --li-font-weight: 400;
+    --li-font-weight-medium: 500;
+    --li-font-weight-semibold: 600;
+    --li-font-weight-bold: 700;
+
+    --li-line-height-sm: 1.2;
+    --li-line-height: 1.4;
+    --li-line-height-lg: 1.75;
+
+    --li-space-xs: 5px;
+    --li-space-sm: 10px;
+    --li-space-xm: 15px;
+    --li-space-md: 20px;
+    --li-space-ml: 30px;
+
+    --li-icon-size-xs: 16px;
+    --li-icon-size-sm: 18px;
+    --li-icon-size-md: 24px;
+    --li-icon-size-lg: 32px;
+
+    --li-size-field-xs: 30px;
+    --li-size-field-sm: 40px;
+    --li-size-field-md: 50px;
+
+    --li-radius-sm: 5px;
+    --li-radius-md: 8px;
+    --li-radius-lg: 12px;
+
+    /* Kept as the default radius so components that have not been revisited still match. */
+    --li-radius: var(--li-radius-md);
+
+    --li-container-width-sm: 380px;
+    --li-container-width-md: 480px;
+}

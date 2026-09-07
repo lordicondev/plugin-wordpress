@@ -5,13 +5,16 @@ import { defineIconElement } from './helpers';
 
 import iconSvg from './block.svg?raw';
 
-const { useEffect, useState, useCallback } = wp.element;
+const { useEffect, useState, useCallback, useRef } = wp.element;
 const { InspectorControls, InspectorAdvancedControls, useBlockProps } = wp.blockEditor;
-const { TextControl, SelectControl, Panel, PanelBody, PanelRow } = wp.components;
+const { TextControl, SelectControl } = wp.components;
 const { useSelect } = wp.data;
+const { useRefEffect } = wp.compose;
 const { __ } = wp.i18n;
 
-const DEFAULT_SIZE = 64;
+// Matches EditorPage's default. They used to disagree, so a block with no size of its
+// own previewed at one size on the canvas and opened in the editor showing another.
+const DEFAULT_SIZE = 128;
 const DEFAULT_STROKE = 2;
 const DEFAULT_FORMAT = 'json';
 
@@ -21,6 +24,45 @@ const lordIconBlockIcon = (
 
 // Define icon element globally.
 defineIconElement();
+
+/**
+ * Makes `<lord-icon>` work inside the editor canvas.
+ *
+ * Since WordPress 7.1 the canvas is always an iframe, with its own document, window and
+ * custom-element registry. `defineIconElement()` above runs in the admin page and registers
+ * `<li-icon>` there — which is right for the Lit preview in the sidebar, and useless for the
+ * canvas: an element inside the iframe never upgrades, stays an unknown inline element with
+ * no content, and renders as 0x0.
+ *
+ * Registering the outer class into the iframe's registry does not work either — a custom
+ * element constructor from another realm throws `Illegal constructor`, because the iframe's
+ * `HTMLElement` is a different class object. The defining script has to run *inside*.
+ *
+ * So the module is injected into the canvas document, once. It is the same bundle the
+ * published page loads, which is the point: the canvas then renders exactly what a visitor
+ * will get, rather than a lookalike.
+ *
+ * @param {HTMLElement} element - Any element inside the canvas.
+ */
+function ensureElementInDocument(element) {
+    const doc = element.ownerDocument;
+    const view = doc.defaultView;
+
+    if (!view || !window.__LORDICON__?.elementUrl) {
+        return;
+    }
+
+    // Already defined, or a previous block instance already queued the injection.
+    if (view.customElements?.get('lord-icon') || doc.querySelector('script[data-lordicon-element]')) {
+        return;
+    }
+
+    const script = doc.createElement('script');
+    script.type = 'module';
+    script.dataset.lordiconElement = '';
+    script.src = window.__LORDICON__.elementUrl;
+    (doc.head || doc.documentElement).appendChild(script);
+}
 
 function handleColors(colors) {
     let result = [];
@@ -113,7 +155,7 @@ const useIconExported = (callback) => {
 
 const useShowLibrary = (callback) => {
     useEffect(() => {
-        const handleShowLibrary = (event) => {
+        const handleShowLibrary = () => {
             callback();
         };
 
@@ -122,13 +164,16 @@ const useShowLibrary = (callback) => {
     }, [callback]);
 };
 
-let isRedirecting = false;
-
 const useLogin = (callback) => {
+    // Guards against a second navigation while the first is still in flight. Scoped to the
+    // hook rather than the module: as a module-level flag it was never reset, so returning
+    // to the editor without a full page load left login permanently dead.
+    const redirecting = useRef(false);
+
     useEffect(() => {
         const handleLogin = () => {
-            if (isRedirecting) return;
-            isRedirecting = true;
+            if (redirecting.current) return;
+            redirecting.current = true;
             callback();
         };
 
@@ -149,9 +194,8 @@ wp.blocks.registerBlockType('lordicon/block', {
 
         const blockProps = useBlockProps();
 
-        const isSelected = useSelect((select) => {
-            return select('core/block-editor').isBlockSelected(clientId);
-        }, [clientId]);
+        // Runs against the canvas element, so `ownerDocument` is the iframe's.
+        const canvasIconRef = useRefEffect(ensureElementInDocument, []);
 
         const isInEditor = useSelect((select) => {
             const selectedBlockClientId = select('core/block-editor').getSelectedBlockClientId();
@@ -164,15 +208,21 @@ wp.blocks.registerBlockType('lordicon/block', {
             if (node && selectedIcon) {
                 const isSameIcon = icon?.family === selectedIcon.family && icon?.style === selectedIcon.style && icon?.index === selectedIcon.index;
 
+                // `display` and `target` belong to the block, not to the icon, so they
+                // survive an icon change. The editor does not edit them - it carries them,
+                // so that rebuilding `properties` on export cannot drop them.
                 const assign = {
                     stroke: properties?.stroke,
                     size: properties?.size,
                     colors: properties?.colors,
+                    display: properties?.display,
+                    target: properties?.target,
                 }
 
                 if (isSameIcon) {
                     Object.assign(assign, {
                         state: properties?.state,
+                        playback: properties?.playback,
                         intro: properties?.intro,
                         loop: properties?.loop,
                         speed: properties?.speed,
@@ -216,7 +266,7 @@ wp.blocks.registerBlockType('lordicon/block', {
                         }
 
                         setAttachments(data);
-                    } catch (e) {
+                    } catch {
                         const label = icon ? `${icon.family}-${icon.style}-${icon.index}-${icon.name}` : __('Icon', 'lordicon');
                         setMessagePreview(__(`Icon unavailable: ${label}. Edit this block and choose a new icon.`, 'lordicon'));
                     } finally {
@@ -280,8 +330,14 @@ wp.blocks.registerBlockType('lordicon/block', {
 
             const newAttributes = {};
 
-            if (params.jsonAttachmentId !== jsonAttachmentId) {
-                newAttributes.jsonAttachmentId = params.jsonAttachmentId;
+            // The upload endpoint answers with whatever attachments already exist for this
+            // icon in this post, so choosing the SVG format can come back carrying the JSON
+            // id from an earlier insert of the same icon. `render_block()` prefers JSON
+            // whenever an id is present, which would quietly override the chosen format.
+            const jsonId = params.properties?.format === 'svg' ? 0 : params.jsonAttachmentId;
+
+            if (jsonId !== jsonAttachmentId) {
+                newAttributes.jsonAttachmentId = jsonId;
             }
 
             if (params.svgAttachmentId !== svgAttachmentId) {
@@ -314,7 +370,7 @@ wp.blocks.registerBlockType('lordicon/block', {
         const format = properties?.format || DEFAULT_FORMAT;
         const state = properties?.state || null;
         const colors = handleColors(properties?.colors);
-        const speed = Math.round(100 * properties?.speed || 1) / 100;
+        const speed = Math.round(100 * (properties?.speed ?? 1)) / 100;
         const target = properties?.target || null;
         const sequence = properties?.sequence || null;
         const trigger = sequence ? 'sequence' : handleTrigger(state);
@@ -380,7 +436,8 @@ wp.blocks.registerBlockType('lordicon/block', {
                         </div>
                     ) : format === 'json' && attachments?.json ? (
                         <div className={`lordicon-wrapper${properties?.display === 'inline-block' ? ' lordicon-wrapper-inline-block' : ''}`}>
-                            <li-icon
+                            <lord-icon
+                                ref={canvasIconRef}
                                 style={{ width: size, height: size }}
                                 src={attachments.json}
                                 stroke={stroke}
@@ -393,7 +450,7 @@ wp.blocks.registerBlockType('lordicon/block', {
                                 intro={intro === undefined ? undefined : ''}
                                 click-to-replay={clickToReplay}
                             >
-                            </li-icon>
+                            </lord-icon>
                         </div>
                     ) : format === 'svg' && attachments?.svg ? (
                         <div className={`lordicon-wrapper${properties?.display === 'inline-block' ? ' lordicon-wrapper-inline-block' : ''}`}>

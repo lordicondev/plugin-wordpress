@@ -19,16 +19,20 @@ export function hexToHSL(hex: string): { h: number, s: number, l: number } {
     let g = parseInt(result[2], 16);
     let b = parseInt(result[3], 16);
 
-    r /= 255, g /= 255, b /= 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    let h, s, l = (max + min) / 2;
+    r /= 255;
+    g /= 255;
+    b /= 255;
 
-    h = 0;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+
+    let h = 0;
+    let s;
 
     if (max == min) {
         h = s = 0;
     } else {
-        let d = max - min;
+        const d = max - min;
         s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
         switch (max) {
             case r: h = (g - b) / d + (g < b ? 6 : 0); break;

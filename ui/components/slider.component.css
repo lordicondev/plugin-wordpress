@@ -5,6 +5,7 @@
     position: relative;
 }
 
+:host([inert]),
 :host(.disabled) {
     filter: grayscale(1);
     opacity: 0.5;
@@ -16,52 +17,61 @@
     position: relative;
     height: 16px;
     margin: 0 8px;
+    cursor: pointer;
 
-    --fill-scale: 0;
-    --progress: 0%;
+    --li-slider-fill-ratio: 0;
+    --li-slider-knob-position: 0%;
 }
 
-#line {
+/* Overhangs the track by the knob radius so the fill reaches both ends. */
+#bar {
     position: absolute;
-    left: 0;
-    right: 0;
-    background-color: var(--li-color-border);
     display: block;
-    height: 4px;
-    top: 6px;
-    border-radius: 4px;
+    left: -8px;
+    right: -8px;
     z-index: 1;
 }
 
-#line.fill:after {
+#line,
+#fill {
     position: absolute;
     display: block;
-    content: '';
+    height: 2px;
+    top: 7px;
+    border-radius: 2px;
+}
+
+#line {
     left: 0;
-    top: 0;
-    width: var(--progress);
-    height: 4px;
-    border-radius: 4px;
-    background: var(--li-color-bg-brand);
+    right: 0;
+    background-color: var(--li-color-border-strong);
+}
+
+#fill {
+    left: 0;
+    width: 100%;
+    background-color: var(--li-color-brand);
+    transform: scaleX(var(--li-slider-fill-ratio));
+    transform-origin: top left;
 }
 
 #knob {
     position: absolute;
-    left: var(--progress);
+    left: var(--li-slider-knob-position);
     top: 0;
     z-index: 2;
-    background: var(--li-color-bg-brand);
+    background: var(--li-color-bg);
     border-radius: 50%;
-    cursor: move;
     width: 16px;
     height: 16px;
     transform: translateX(-8px);
+    touch-action: none;
+    box-sizing: border-box;
+    border: 1px solid currentColor;
+    color: var(--li-color-border-strong);
+}
 
-    &:hover {
-        background: var(--li-color-bg-brand-hover);
-    }
-
-    &:active {
-        background: var(--li-color-bg-brand-pressed);
-    }
+#knob:hover,
+#knob:active {
+    color: var(--li-color-brand);
 }

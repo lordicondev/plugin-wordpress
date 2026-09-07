@@ -53,9 +53,15 @@ class Plugin {
 
             $this->loader->add_filter('plugin_row_meta', $this, 'plugin_links', 10, 3);
         } else {
-            $define_element = apply_filters('lordicon_define_element', true);
-
-            if ($define_element) {
+            // The element and its styles now load through the block's own `viewScriptModule`
+            // and `style`, so they reach only the pages that actually contain a block. This
+            // filter is the opt-out: a theme or shortcode rendering <lord-icon> by hand still
+            // needs them everywhere, and asking for `true` here restores that.
+            //
+            // Note the meaning changed with this release: it used to gate loading that
+            // happened on every page anyway, and now it forces loading that otherwise does
+            // not happen.
+            if (apply_filters('lordicon_define_element', false)) {
                 $this->loader->add_action('wp_enqueue_scripts', $this, 'enqueue_frontend_assets');
             }
         }
@@ -88,38 +94,27 @@ class Plugin {
     }
 
     public function enqueue_block_editor_assets() {
-        wp_enqueue_script(
-            'lordicon-block-js',
-            plugins_url('/dist/block.js', dirname(__FILE__)),
-            array('wp-blocks', 'wp-element', 'wp-components', 'wp-block-editor', 'wp-i18n'),
-            Constants::plugin_version(),
-            false,
-        );
-
-        wp_enqueue_style(
-            'lordicon-block-css',
-            plugins_url('/dist/block.css', dirname(__FILE__)),
-            array('wp-edit-blocks'),
-            Constants::plugin_version()
-        );
-
+        // The handles themselves are registered in register_block_type() and enqueued by
+        // WordPress from block.json. All that is left here is the per-request configuration,
+        // which needs the current screen and so cannot be attached at registration time.
         $this->patch_module('lordicon-block-js', 'editor');
     }
 
+    /**
+     * Loads the element on every page.
+     *
+     * Only runs when the `lordicon_define_element` filter asks for it. Blocks get the same
+     * assets through block.json, on the pages that contain one.
+     */
     public function enqueue_frontend_assets() {
-        wp_enqueue_style(
-            'lordicon-element-style',
-            plugins_url('/dist/element.css', dirname(__FILE__)),
-            array(),
-            Constants::plugin_version()
-        );
+        wp_enqueue_style('lordicon-element-css');
 
         wp_enqueue_script_module(
             'lordicon-element-script',
             plugins_url('/dist/element.js', dirname(__FILE__)),
             array(),
             Constants::plugin_version(),
-        );    
+        );
     }
 
     private function patch_module(string $scriptHandle, string $context) {
@@ -144,6 +139,9 @@ class Plugin {
             'variants' => $variants,
             'postId'   => $post_id,
             'context'  => $context,
+            // The editor canvas is an iframe with its own custom-element registry, so the
+            // block injects this module into it. See ensureElementInDocument() in block.jsx.
+            'elementUrl' => plugins_url('/dist/element.js', dirname(__FILE__)),
         ];
 
         wp_add_inline_script(
@@ -163,6 +161,37 @@ class Plugin {
     }
 
     public function register_block_type() {
+        $version = Constants::plugin_version();
+
+        // Registered by hand rather than declared as `file:` paths in block.json, because
+        // both are built by Vite into /dist and the editor bundle needs an explicit WordPress
+        // dependency list plus the type="module" patch below. block.json refers to them by
+        // handle; WordPress enqueues them where each belongs.
+        wp_register_script(
+            'lordicon-block-js',
+            plugins_url('/dist/block.js', dirname(__FILE__)),
+            array('wp-blocks', 'wp-element', 'wp-components', 'wp-block-editor', 'wp-i18n', 'wp-data', 'wp-compose'),
+            $version,
+            false
+        );
+
+        // Chrome for the Lit components in the editor sidebar.
+        wp_register_style(
+            'lordicon-block-css',
+            plugins_url('/dist/block.css', dirname(__FILE__)),
+            array('wp-edit-blocks'),
+            $version
+        );
+
+        // Styles for a rendered icon. Declared as the block's `style`, so WordPress loads it
+        // both on the published page and inside the editor canvas iframe.
+        wp_register_style(
+            'lordicon-element-css',
+            plugins_url('/dist/element.css', dirname(__FILE__)),
+            array(),
+            $version
+        );
+
         register_block_type(dirname(__DIR__) . '/dist/block.json', array(
             'render_callback' => array($this, 'render_block'),
         ));
@@ -200,7 +229,7 @@ class Plugin {
         add_settings_error(
             'lordicon_settings',
             'settings_updated',
-            'Settings saved.',
+            __( 'Settings saved.', 'lordicon' ),
             'updated'
         );
     }
@@ -283,14 +312,14 @@ class Plugin {
             $css_classes[] = 'lordicon-wrapper-' . sanitize_html_class( $display );
         }
         if ( ! empty( $class_name ) ) {
-            $css_classes[] = sanitize_html_class( $class_name );
-        }
-        $class_attr = esc_attr( implode( ' ', $css_classes ) );
-
-        // ID (anchor)
-        $id_attr = '';
-        if ( ! empty( $anchor ) ) {
-            $id_attr = ' id="' . esc_attr( $anchor ) . '"';
+            // `className` may hold several classes. sanitize_html_class() strips whitespace,
+            // so sanitising the whole string would fuse them into one unusable class name.
+            foreach ( preg_split( '/\s+/', $class_name, -1, PREG_SPLIT_NO_EMPTY ) as $single_class ) {
+                $sanitized = sanitize_html_class( $single_class );
+                if ( '' !== $sanitized ) {
+                    $css_classes[] = $sanitized;
+                }
+            }
         }
 
         // Prepare <lord-icon> attributes as key => value (value true means boolean attr)
@@ -398,7 +427,11 @@ class Plugin {
                             $icon['index'] ?? '',
                             $icon['name'] ?? ''
                         );
-                        echo esc_html( sprintf( 'Icon unavailable: %s. Edit this block and choose a new icon.', $label ) );
+                        printf(
+                            /* translators: %s: icon identifier, e.g. wired-outline-1-cloud. */
+                            esc_html__( 'Icon unavailable: %s. Edit this block and choose a new icon.', 'lordicon' ),
+                            esc_html( $label )
+                        );
                         ?>
                     </p>
                 </div>

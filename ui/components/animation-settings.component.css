@@ -1,16 +1,56 @@
 :host {
-    display: flex;
-    flex-direction: column;
-    padding: var(--li-space-sm);
-    gap: var(--li-space-sm);
-    box-sizing: border-box;
-    background: var(--li-color-bg);
-    border-radius: 10px;
+    display: block;
 }
 
-:host(.shadow) {
-    box-shadow: var(--li-shadow);
+.accordion {
+    display: flex;
+    flex-direction: column;
     border: 1px solid var(--li-color-border);
+    border-radius: var(--li-radius-md);
+    overflow: hidden;
+}
+
+.header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--li-space-xs);
+    padding: var(--li-space-xs) var(--li-space-sm);
+    background: var(--li-color-bg);
+    cursor: pointer;
+    user-select: none;
+}
+
+.header:hover {
+    background: var(--li-color-bg-hover);
+}
+
+.header:focus-visible {
+    outline: 1px solid var(--li-color-border-focus);
+    outline-offset: -1px;
+}
+
+.header li-pictogram {
+    width: var(--li-icon-size-xs);
+    height: var(--li-icon-size-xs);
+    color: var(--li-color-text-secondary);
+    transition: transform 0.2s;
+    flex: none;
+}
+
+.header li-pictogram.rotated {
+    transform: rotate(180deg);
+}
+
+/* Recessed, so the open panel reads as contained by its header. */
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--li-space-sm);
+    padding: var(--li-space-sm);
+    background: var(--li-color-bg-secondary);
+    border-top: 1px solid var(--li-color-border);
 }
 
 .field-group {
@@ -19,14 +59,27 @@
     gap: var(--li-space-xs);
 }
 
-.row {
-    display: flex;
+.field-group.row {
     flex-direction: row;
     align-items: center;
+    justify-content: space-between;
     gap: var(--li-space-sm);
 }
 
-.row>.field-group,
-.row>span {
-    flex: 1;
+/*
+ * label | slider | value, one parameter per row. The label column sizes to its content so the
+ * three rows line up. The value column is fixed and the field's own padding tightened: at the
+ * panel's 300px the default padding left "1.0 sec" a character short of fitting.
+ */
+.field-col {
+    display: grid;
+    grid-template-columns: max-content 1fr 86px;
+    align-items: center;
+    column-gap: var(--li-space-xs);
+    row-gap: var(--li-space-sm);
+}
+
+.field-col li-field {
+    min-width: 0;
+    --li-input-space: 6px;
 }

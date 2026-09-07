@@ -1,0 +1,11 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "types": ["node"]
+    },
+    // `exclude` is inherited, and the parent excludes `tools/**` so the harness stays out of
+    // the app project. Restating it here is load-bearing: without it every file below is
+    // excluded, tsc compiles nothing, and the check passes without looking at anything.
+    "exclude": ["node_modules"],
+    "include": ["**/*.ts", "../../global.d.ts"]
+}

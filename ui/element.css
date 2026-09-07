@@ -1,3 +1,12 @@
+/*
+ * Styles for a rendered Lordicon block.
+ *
+ * Declared as the block's `style` in block.json, so WordPress loads it in two places: on the
+ * published page, and inside the editor canvas iframe. That is deliberate — the canvas now
+ * renders the same `<lord-icon>` the visitor gets, so it must be styled by the same rules
+ * rather than by a near-duplicate that can drift.
+ */
+
 .lordicon-wrapper {
     display: block;
 }
@@ -8,6 +17,10 @@
     height: 24px;
 }
 
+/*
+ * Before the custom element upgrades, the placeholder is an ordinary child of the host and
+ * has to be sized here. Afterwards the element's own shadow styles take over.
+ */
 .lordicon-wrapper lord-icon:not(:defined) {
     svg,
     img {
@@ -31,4 +44,11 @@
     padding: 20px;
     text-align: center;
     background-color: #f9f9f9;
+}
+
+/* Editor-only, but it lives with the other wrapper states rather than in the chrome sheet. */
+.lordicon-busy {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }

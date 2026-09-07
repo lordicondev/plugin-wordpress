@@ -1,7 +1,7 @@
 :host {
     position: fixed;
     z-index: 9999;
-    
+
     display: none;
     text-align: center;
     left: 0;
@@ -11,14 +11,22 @@
 }
 
 #toast {
-    background: var(--li-color-bg-tooltip);
-    color: var(--li-color-text-tooltip); 
-    font-weight: 500;
-    font-size: var(--li-font-size-xs);
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
     max-width: var(--li-container-width-sm);
     margin: var(--li-space-sm);
-    padding: var(--li-space-sm);
-    border-radius: var(--li-radius);
+    padding: var(--li-space-sm) var(--li-space-xm);
+    gap: var(--li-space-sm);
+
+    background: var(--li-color-bg-tooltip);
+    color: var(--li-color-text-tooltip);
+    border-radius: var(--li-radius-lg);
     box-shadow: var(--li-shadow);
-    display: inline-block;
+
+    font-family: var(--li-font-family);
+    font-size: var(--li-font-size-xs);
+    font-weight: var(--li-font-weight-medium);
+    line-height: var(--li-line-height);
+    text-align: left;
 }

@@ -1,58 +1,69 @@
 :host {
-    background: var(--li-color-bg);
-    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    border-radius: var(--li-radius);
-    overflow-y: auto;
-    font-weight: 400;
-    font-size: var(--li-font-size-xs);
-}
+    box-sizing: border-box;
+    overflow: hidden;
 
-.item {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: var(--li-space-sm);
-    cursor: pointer;
-    padding: var(--li-space-sm);
-}
+    background: var(--li-color-bg);
+    border-radius: var(--li-radius-md);
+    border: 1px solid var(--li-color-border);
+    user-select: none;
 
-:host(.slim) .item {
-    gap: var(--li-space-xs);
-    padding: var(--li-space-xs);
-}
-
-.item:not(:last-child) {
-    border-bottom: 1px solid var(--li-color-border);
-}
-
-.item:hover,
-.item:active,
-.item:hover .subtitle {
-    color: var(--li-color-text-brand);
+    font-family: var(--li-font-family);
+    font-size: var(--li-font-size-sm);
+    font-weight: var(--li-font-weight);
 }
 
 :host(.shadow) {
     box-shadow: var(--li-shadow);
-    border: 1px solid var(--li-color-border);
 }
 
-.content {
+:host(.compact) {
+    --li-list-item-gap: var(--li-space-xs);
+}
+
+.container {
+    overflow-y: auto;
+    flex: 1 1 auto;
+}
+
+.group {
+    padding: 4px;
+}
+
+.group:not(:first-child) {
+    border-top: 1px solid var(--li-color-border);
+    margin-top: var(--li-space-xs);
+}
+
+.lines {
     display: flex;
     flex-direction: column;
-    flex: 1;
-    min-width: 10px;
+    min-width: 0;
 }
 
-.title {
-    text-overflow: ellipsis;
+.title,
+.description {
     white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: var(--li-line-height);
 }
 
-.subtitle {
+.description {
     color: var(--li-color-text-secondary);
-    font-size: 10px;
-    font-weight: 400;
+    font-size: var(--li-font-size-xs);
+    text-transform: none;
+}
+
+li-label {
+    height: 26px;
+    margin: 0 var(--li-space-sm);
+}
+
+li-icon {
+    display: block;
+    width: var(--li-icon-size-md);
+    height: var(--li-icon-size-md);
+    flex: none;
 }

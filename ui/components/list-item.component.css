@@ -1,0 +1,62 @@
+:host {
+    cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    height: 34px;
+    padding: 0 var(--li-space-sm);
+    gap: var(--li-list-item-gap, var(--li-space-sm));
+    border-radius: var(--li-radius-sm);
+    box-sizing: border-box;
+    color: var(--li-color-text);
+    background: transparent;
+}
+
+div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--li-space-xs);
+    flex: 1;
+    min-width: 0;
+}
+
+:host(.capitalize) {
+    text-transform: capitalize;
+}
+
+/*
+ * `text-overflow` only takes effect on a block container, so the slot wrapper drops its flex
+ * layout here — on a flex container the text is hard-clipped with no dots. `min-width` is what
+ * lets the wrapper shrink below the text width in the first place.
+ */
+:host(.ellipsis) div {
+    display: block;
+    min-width: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+:host(:hover) {
+    background-color: var(--li-color-bg-hover);
+}
+
+:host(.lg) {
+    height: 46px;
+}
+
+:host(.compact) {
+    --li-list-item-gap: var(--li-space-xs);
+}
+
+:host([active]) {
+    color: var(--li-color-brand);
+    background-color: var(--li-color-brand-subtle);
+}
+
+:host([disabled]) {
+    cursor: not-allowed;
+    background: transparent;
+    color: var(--li-color-text-secondary);
+}

@@ -1,43 +1,130 @@
 :host {
-    cursor: pointer;
-    font-weight: 500;
+    display: inline-flex;
     position: relative;
+    min-width: 10px;
+    cursor: pointer;
+    user-select: none;
+
+    font-family: var(--li-font-family);
+    font-size: var(--li-button-font-size, var(--li-font-size-sm));
+    font-weight: var(--li-font-weight-medium);
+    line-height: var(--li-line-height-lg);
 }
 
-:host(.brand) {
+:host(.sm) {
+    --li-button-font-size: var(--li-font-size-xs);
+}
+
+:host(.md) {
+    --li-button-font-size: var(--li-font-size-sm);
+}
+
+:host(.lg) {
+    --li-button-font-size: var(--li-font-size-md);
+    --li-button-padding-block: var(--li-space-sm);
+}
+
+:host(.expand) {
     display: flex;
-    flex-direction: row;
-    padding: var(--li-space-sm) var(--li-space-md);
+}
+
+:host(.expand) .container {
+    align-items: center;
+    width: 100%;
+}
+
+.container {
+    display: inherit;
     box-sizing: border-box;
+    padding: var(--li-button-padding-block, var(--li-space-sm)) var(--li-space-md);
     justify-content: center;
-    gap: var(--li-space-sm);
-    border-radius: var(--li-radius);
-    background: var(--li-color-bg-brand);
-    color: var(--li-color-text-on-brand);
+    gap: var(--li-space-xs);
+    border-radius: var(--li-radius-md);
+    border: 1px solid transparent;
 }
 
-:host(.brand:hover) {
-    background: var(--li-color-bg-brand-hover);
+.content {
+    flex: 1;
+    text-align: center;
+    min-width: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-:host(.brand:active) {
-    background: var(--li-color-bg-brand-pressed);
+/* primary */
+:host(.primary) .container {
+    background: var(--li-color-brand);
+    border-color: var(--li-color-brand);
+    color: var(--li-color-on-brand);
 }
 
-:host(.link) {
+:host(.primary:hover) .container {
+    background: var(--li-color-brand-hover);
+    border-color: var(--li-color-brand-hover);
+}
+
+:host(.primary:active) .container {
+    background: var(--li-color-brand-pressed);
+    border-color: var(--li-color-brand-pressed);
+}
+
+/* secondary */
+:host(.secondary) .container {
+    background: var(--li-color-bg);
+    border-color: var(--li-color-border);
+    color: var(--li-color-text);
+}
+
+:host(.secondary:hover) .container {
+    background: var(--li-color-bg-hover);
+}
+
+:host(.secondary:active) .container {
+    background: var(--li-color-bg-pressed);
+}
+
+/* pro */
+:host(.pro) .container {
+    background: var(--li-color-premium);
+    border-color: var(--li-color-premium);
+    color: var(--li-color-on-brand);
+}
+
+:host(.pro:hover) .container {
+    background: var(--li-color-premium-hover);
+    border-color: var(--li-color-premium-hover);
+}
+
+/* danger */
+:host(.danger) .container {
+    background: var(--li-color-danger);
+    border-color: var(--li-color-danger);
+    color: var(--li-color-on-brand);
+}
+
+:host(.danger:hover) .container {
+    background: var(--li-color-danger-hover);
+    border-color: var(--li-color-danger-hover);
+}
+
+/* flat — a label that happens to be clickable */
+:host(.flat) .container,
+:host(.link) .container {
+    padding: var(--li-space-xs) var(--li-space-sm);
+    background: transparent;
+    border-color: transparent;
     color: var(--li-color-text-brand);
 }
 
-:host([inert]) {
-    opacity: 0.75;
-    filter: grayscale(1);
+:host(.flat:hover) .container,
+:host(.link:hover) .container {
+    color: var(--li-color-brand-hover);
 }
 
-div {
-    flex: 1;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-    min-width: 10px;
-    text-align: center;
+:host([disabled]),
+:host([inert]) {
+    cursor: not-allowed;
+    opacity: 0.75;
+    filter: grayscale(1);
 }

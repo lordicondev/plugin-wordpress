@@ -57,7 +57,7 @@ export class LoginPage extends LitElement {
     busy?: boolean;
 
     async checkEmail() {
-        const email = this.emailInput?.value!;
+        const email = String(this.emailInput?.value ?? '');
 
         if (!validateEmail(email)) {
             this.emailInput!.parentElement!.classList.add('error');

@@ -30,7 +30,7 @@ export class HTTPService implements HTTPServiceInterface {
         const isFormData = data instanceof FormData;
 
         let requestBody: FormData | string;
-        let headers: Record<string, string> = {};
+        const headers: Record<string, string> = {};
 
         if (isFormData) {
             // Obsługa FormData (dla uploadów plików)

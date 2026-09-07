@@ -2,18 +2,24 @@ import { extractLottieProperties, IconState, readStates, tupleColorToHex } from 
 import { html, LitElement, unsafeCSS } from "lit";
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
-import { AnimationLabelSettingsComponent } from '../components/animation-label-settings.component';
 import { ExportButtonComponent } from "../components/export-button.component";
 import { PreviewComponent } from '../components/preview.component';
 import { DI } from "../core";
 import { tooltip } from '../directives';
-import { handleAnimation, handleDelay, handleTrigger } from '../helpers';
+import { animationSequence, computeSupports, defaultAnimation, needsSequence, parseTrigger, readPlayback, supportsIntro, writeAnimation } from '../helpers';
+import { AnimationSettingsChangeEvent } from '../components/animation-settings.component';
+import { AnimationPlayback, BlockProperties } from '../types';
 import CSS from './editor.page.css?raw';
 
 interface Color {
     name: string;
     color: string;
     default: string;
+}
+
+/** What `prepareAnimation()` hands to the preview and to `export()`. */
+interface PreparedAnimation {
+    sequence: string;
 }
 
 interface IconInterface {
@@ -37,9 +43,17 @@ const DEFAULT_SIZE = 128;
 
 const DEFAULT_STROKE = 2;
 
-const DEFAULT_SPEED = 1;
-
-const DEFAULT_RENDER_DELAY = [0, 0];
+/**
+ * Pads a delay to the two slots the editor exposes.
+ *
+ * `triggerDelay` returns only the slots a trigger actually uses - none for `loop`, one for
+ * `in` and `hover` - while the settings fields index into both. Padding here keeps a
+ * missing slot out of the arithmetic instead of turning it into NaN.
+ * @param delay - Delays in milliseconds, possibly shorter than two entries.
+ */
+function normaliseDelay(delay: number[] | undefined): number[] {
+    return [delay?.[0] ?? 0, delay?.[1] ?? 0];
+}
 
 const STROKE_GROUPS = [
     {
@@ -100,42 +114,57 @@ function renderStrokeEditor(this: EditorPage) {
     `;
 }
 
-function renderAnimationEditor(this: EditorPage, params: { multiple?: boolean, animation?: boolean } = {}) {
-    if (!this.supportsStates) {
-        return null;
-    }
+/**
+ * State picker plus the playback settings that belong to the chosen state.
+ *
+ * The settings used to hide behind a gear icon and a popover; they are now an accordion
+ * directly under the grid, matching the portal. The settings panel stands on its own so that
+ * an icon with a single state still exposes playback, speed and delay — which the old layout
+ * could not, because the gear lived on the grid's label.
+ */
+function renderAnimationEditor(this: EditorPage) {
+    const supports = this.supports;
 
     let states = this.states;
 
-    if (!params.animation) {
+    if (!supports.animation) {
         states = states.filter(c => {
             return c.default || c.name.startsWith('morph-');
         });
     }
 
-    if (states.length <= 1) {
+    const grid = supports.states && states.length > 1 ? html`
+        <li-state-grid
+            @change=${this.changeState}
+            .value=${this.state}
+            .items=${states}
+            .icon=${this.icon.dataJson}
+            .animation=${supports.animation}
+        ></li-state-grid>
+    ` : null;
+
+    const settings = supports.animationSettings ? html`
+        <li-animation-settings
+            .trigger=${this.trigger}
+            .supportsLoop=${supports.loop}
+            .playback=${this.playback}
+            .delay=${this.renderDelay}
+            .speed=${this.renderSpeed}
+            .intro=${this.renderIntro}
+            .canUseIntro=${this.canUseIntro}
+            .format=${this.format}
+            @change=${this.changeAnimationSettings}
+        ></li-animation-settings>
+    ` : null;
+
+    if (!grid && !settings) {
         return null;
     }
 
     return html`
         <div class="field-group">
-            <li-animation-label-settings 
-                .format=${this.format}
-                .intro=${this.renderIntro}
-                .loop=${this.renderLoop}
-                .speed=${this.renderSpeed}
-                .delay=${this.renderDelay}
-                .multiple=${params.multiple}
-                .trigger=${this.trigger}
-                @change=${this.changeAnimationSettings}
-            ></li-animation-label-settings>
-            <li-state-grid
-                @change=${this.changeState}
-                .value=${this.state}
-                .items=${states}
-                .icon=${this.icon.dataJson}
-                .animation=${this.supportsAnimation}
-            ></li-state-grid>
+            ${grid}
+            ${settings}
         </div>
     `;
 }
@@ -231,8 +260,6 @@ export class EditorPage extends LitElement {
     @query('li-export-button')
     exportButton?: ExportButtonComponent;
 
-    @query('li-animation-label-settings', false)
-    animationLabel?: AnimationLabelSettingsComponent;
 
     @query('li-preview')
     previewElement?: PreviewComponent;
@@ -280,7 +307,7 @@ export class EditorPage extends LitElement {
      * Animation loop.
      */
     @state()
-    renderLoop!: boolean;
+    playback!: AnimationPlayback;
 
     /**
      * Animation intro.
@@ -332,6 +359,17 @@ export class EditorPage extends LitElement {
      */
     supportsColors!: boolean;
 
+    /**
+     * Layout and targeting, owned by the block's Advanced panel. The editor never changes
+     * them; it carries them so that rebuilding `properties` does not drop them.
+     */
+    display?: BlockProperties['display'];
+
+    target?: string | null;
+
+    /** Memo for `prepareAnimation()`. */
+    private animationCache?: { key: string, value: PreparedAnimation };
+
     constructor() {
         super();
     }
@@ -343,25 +381,17 @@ export class EditorPage extends LitElement {
 
             const properties = extractLottieProperties(icon.dataJson);
 
-            if (assign?.colors?.primary) {
-                this.colors = properties.filter(prop => prop.type === 'color').map(prop => {
-                    const defaultColor = assign?.colors?.[prop.name] || tupleColorToHex(prop.value);
-                    return {
-                        name: prop.name,
-                        color: defaultColor,
-                        default: defaultColor,
-                    };
-                });
-            } else {
-                this.colors = properties.filter(prop => prop.type === 'color').map(prop => {
-                    const defaultColor = tupleColorToHex(prop.value);
-                    return {
-                        name: prop.name,
-                        color: assign?.colors?.[defaultColor] || defaultColor,
-                        default: defaultColor,
-                    };
-                });
-            }
+            // Stored colours are keyed by property name - the same key `export()` writes.
+            // `default` stays the icon's own colour, so the reset button has something to
+            // reset to and the dirty check stays honest.
+            this.colors = properties.filter(prop => prop.type === 'color').map(prop => {
+                const defaultColor = tupleColorToHex(prop.value);
+                return {
+                    name: prop.name,
+                    color: assign?.colors?.[prop.name] ?? defaultColor,
+                    default: defaultColor,
+                };
+            });
 
             this.colors = this.colors || [];
 
@@ -382,10 +412,18 @@ export class EditorPage extends LitElement {
         this.changes = !isEmpty(assign);
         this.stroke = assign.stroke === undefined ? DEFAULT_STROKE : assign.stroke;
         this.size = assign.size === undefined ? DEFAULT_SIZE : assign.size;
+        // `readPlayback` accepts both shapes: the `playback` this version writes and the
+        // bare `loop` flag everything before it wrote.
+        const defaults = defaultAnimation(this.state);
+
+        this.playback = readPlayback({ ...assign, state: this.state }, this.supportsAnimation);
         this.renderIntro = assign.intro || false;
-        this.renderLoop = assign.loop || false;
-        this.renderSpeed = assign.speed === undefined ? DEFAULT_SPEED : assign.speed;
-        this.renderDelay = assign.delay || handleDelay(this.state) || DEFAULT_RENDER_DELAY;
+        this.renderSpeed = assign.speed === undefined ? defaults.speed : assign.speed;
+        this.renderDelay = normaliseDelay(assign.delay ?? defaults.delay);
+
+        // Carried through untouched: written from the block's Advanced panel, not here.
+        this.display = assign.display;
+        this.target = assign.target ?? null;
 
         this.icon = icon;
     }
@@ -428,11 +466,17 @@ export class EditorPage extends LitElement {
                     acc[color.name] = color.color;
                     return acc;
                 }, {}),
-                intro: this.renderIntro,
-                loop: this.renderLoop,
-                speed: this.renderSpeed,
-                delay: this.renderDelay,
-                sequence: (this.renderLoop || this.trigger === 'loop') ? this.prepareAnimation().sequence : undefined,
+                ...writeAnimation({
+                    playback: this.playback,
+                    intro: this.renderIntro,
+                    speed: this.renderSpeed,
+                    delay: this.renderDelay,
+                }),
+                sequence: this.pageSequence || undefined,
+                // Set from the block's Advanced panel. Rebuilding `properties` without them
+                // is how they used to be silently dropped on every re-export.
+                display: this.display,
+                target: this.target,
             };
 
             const fileName = `${icon.family}-${icon.style}-${icon.index}-${icon.name}`;
@@ -465,8 +509,8 @@ export class EditorPage extends LitElement {
                 const jsonFile = new File([jsonBlob], fileName + '.json', { type: 'application/json' });
                 formData.append('json_file', jsonFile);
 
-                const trigger = handleTrigger(this.state);
-                if (trigger != 'in') {
+                // An `in` state starts from nothing, so frame 0 would be a blank poster.
+                if (this.trigger !== 'in') {
                     const svgBlob = await DI.renderService.renderFrameSvg(this.icon.dataJson, {
                         sequence: 'frame:0',
                         properties: renderProperties,
@@ -531,11 +575,11 @@ export class EditorPage extends LitElement {
         this.changes = true;
     }
 
-    changeAnimationSettings(e: CustomEvent) {
+    changeAnimationSettings(e: CustomEvent<AnimationSettingsChangeEvent>) {
+        this.playback = e.detail.playback;
         this.renderIntro = e.detail.intro;
-        this.renderLoop = e.detail.loop;
         this.renderSpeed = e.detail.speed;
-        this.renderDelay = e.detail.delay;
+        this.renderDelay = normaliseDelay(e.detail.delay);
 
         this.changes = true;
     }
@@ -572,33 +616,44 @@ export class EditorPage extends LitElement {
     }
 
     resetAnimationSettings() {
-        this.renderIntro = false;
-        this.renderLoop = false;
-        this.renderSpeed = DEFAULT_SPEED;
-        this.renderDelay = handleDelay(this.state);
+        const defaults = defaultAnimation(this.state);
+
+        this.playback = defaults.playback;
+        this.renderIntro = defaults.intro;
+        this.renderSpeed = defaults.speed;
+        this.renderDelay = normaliseDelay(defaults.delay);
     }
 
-    sectionSelect(e: CustomEvent) {
-        e.preventDefault();
 
-        this.animationLabel!.openSelect({
-            section: e.detail.section,
-            target: e.detail.target,
+    /**
+     * Builds the playback sequence for the current settings.
+     *
+     * Memoised on the values that feed it. `render()` calls this on every reactive update -
+     * every keystroke in a number field included - and the builder re-reads the icon's
+     * states each time, which is the expensive part.
+     */
+    prepareAnimation(): PreparedAnimation {
+        if (!this.supportsAnimation) {
+            return { sequence: '' };
+        }
+
+        const key = JSON.stringify([this.state, this.playback, this.renderSpeed, this.renderDelay]);
+        if (this.animationCache?.key === key) {
+            return this.animationCache.value;
+        }
+
+        const { sequence } = animationSequence(this.icon.dataJson, {
+            state: this.state,
+            playback: this.playback,
+            delay: this.renderDelay,
+            speed: this.renderSpeed,
         });
-    }
 
-    prepareAnimation() {
-        return this.supportsAnimation ? handleAnimation(
-            this.icon.dataJson,
-            {
-                preview: true,
-                state: this.state,
-                speed: this.renderSpeed,
-                delay: this.renderDelay,
-                intro: this.renderIntro,
-                loop: this.renderLoop,
-            },
-        ) : { sequence: '', sections: [], duration: 0, multiple: false };
+        const value: PreparedAnimation = { sequence };
+
+        this.animationCache = { key, value };
+
+        return value;
     }
 
     render() {
@@ -618,8 +673,6 @@ export class EditorPage extends LitElement {
             return renderPremiumIcon.call(this);
         }
 
-        const { sequence, sections, duration, multiple } = this.prepareAnimation();
-
         const openIconPage = __SUPPORT_NEW_TAB__ ? html`<li-pictogram slot="action" class="clickable" icon="arrowGo" ${tooltip('Open icon page')} @click=${this.openIconPage}></li-pictogram>` : null;
 
         return html`
@@ -637,14 +690,9 @@ export class EditorPage extends LitElement {
                     .state=${this.state}
                     .trigger=${this.trigger}
                     .colors=${this.colors}
-                    .sequence=${sequence}
-                    .sections=${sections}
-                    .duration=${duration}
+                    .sequence=${this.pageSequence}
                     .speed=${this.renderSpeed}
-                    .delay=${this.renderDelay}
                     .intro=${this.renderIntro}
-                    .loop=${this.renderLoop}
-                    @section=${this.sectionSelect.bind(this)}
                 ><img src=${this.icon.srcPreview}/></li-preview>
             </div>
 
@@ -659,12 +707,42 @@ export class EditorPage extends LitElement {
             </div>
 
             <div class="body border">
-                ${renderAnimationEditor.call(this, { multiple, animation: this.supportsAnimation })}
+                ${renderAnimationEditor.call(this)}
                 ${renderColorsEditor.call(this)}
                 ${renderStrokeEditor.call(this)}
                 ${renderSizeEditor.call(this)}
             </div>
         `;
+    }
+
+    /**
+     * The sequence that will reach the page, or an empty string when none is written.
+     *
+     * Both the preview and `export()` read this, which is what keeps them honest: a preview
+     * driven by a sequence the page would not carry would show motion nobody gets.
+     */
+    get pageSequence(): string {
+        if (!this.supportsAnimation || !needsSequence(this.playback, this.trigger)) {
+            return '';
+        }
+
+        return this.prepareAnimation().sequence;
+    }
+
+    /**
+     * Which controls apply to the current format and icon. Single source of truth for the
+     * editor's layout, replacing the scattered `supportsX` getters it grew.
+     */
+    get supports() {
+        return computeSupports(this.format, this.supportsColors, this.supportsStroke, this.supportsStates);
+    }
+
+    /**
+     * Whether an intro animation is available: the icon has to declare an `in-` state, and
+     * the chosen state has to be one an intro can lead into.
+     */
+    get canUseIntro() {
+        return supportsIntro(this.format, this.state, this.states);
     }
 
     get supportsSize() {
@@ -676,8 +754,12 @@ export class EditorPage extends LitElement {
     }
 
     get trigger() {
-        let [trigger, ..._name] = this.state.split('-');
-        return trigger || 'hover';
+        return parseTrigger(this.state);
+    }
+
+    /** Legacy mirror of the playback mode, still read by the settings popup. */
+    get renderLoop() {
+        return this.playback === 'continuous';
     }
 
     static styles = unsafeCSS(CSS);

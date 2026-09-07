@@ -3,20 +3,13 @@ import { customElement, property, query } from 'lit/decorators.js';
 import { createPopover, popover } from "../directives";
 import { Async, debounce, getScrollBarWidth, TIME_OUT_AFTER } from "../helpers";
 import { InputComponent } from "./input.component";
+import { ListComponent, ListOption } from "./list.component";
 import CSS from './library-parameter.component.css?raw';
-import { ListComponent } from "./list.component";
 
 interface SearchChangeEvent {
     search: string;
     variant: string;
     freeIcons: boolean;
-}
-
-interface VariantItem {
-    id: string;
-    title: string;
-    subtitle?: string;
-    json?: any;
 }
 
 const SEARCH_DELAY = 500;
@@ -33,7 +26,7 @@ export class LibraryParameterComponent extends LitElement {
     listComponent?: ListComponent;
 
     @property()
-    variants: VariantItem[] = [];
+    variants: ListOption[] = [];
 
     @property()
     variant: string = '';
@@ -111,13 +104,13 @@ export class LibraryParameterComponent extends LitElement {
                 <li-pictogram icon="arrowDown"></li-pictogram>
             </div>
 
-            <li-list class="shadow slim" .items=${this.variants} @change=${this.variantChange} ${popover(this._popover)}></li-list>
+            <li-list class="shadow compact" .options=${this.variants} .value=${this.variant} @change=${this.variantChange} ${popover(this._popover)}></li-list>
         `;
     }
 
     get variantLabel() {
         if (this.variant && this.variants.length > 0) {
-            const find = this.variants.find((v) => v.id === this.variant);
+            const find = this.variants.find((v) => v.value === this.variant);
             if (find) {
                 return find.title;
             }

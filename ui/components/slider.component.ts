@@ -1,24 +1,33 @@
 import { html, LitElement, PropertyValues, TemplateResult, unsafeCSS } from "lit";
 import { customElement, property, query } from 'lit/decorators.js';
 import CSS from './slider.component.css?raw';
-import { classMap } from "lit/directives/class-map.js";
 
 export interface SliderChangeEvent {
     value: number;
 }
 
+/**
+ * Slider. Ported from the portal's `ui/components/slider.component.ts`.
+ *
+ * Not a native `<input type="range">`: the track has to carry a fill and, in the editor, a
+ * slot for section markers. Drag listeners live on `window` so a pointer leaving the 300px
+ * panel mid-drag still reaches us.
+ */
 @customElement('li-slider')
 export class SliderComponent extends LitElement {
     @property({ type: Number })
     value: number = 0;
 
     @property({ type: Number })
-    minValue: number = 0;
+    min: number = 0;
 
     @property({ type: Number })
-    maxValue: number = 100;
+    max: number = 100;
 
-    @property({ type: Boolean })
+    @property({ type: Number })
+    step: number = 1;
+
+    @property({ type: Boolean, reflect: true })
     fill: boolean = false;
 
     @query('#slider', true)
@@ -27,126 +36,155 @@ export class SliderComponent extends LitElement {
     @query('#knob', true)
     knobElement?: HTMLElement;
 
-    drag: boolean = false;
+    private drag: boolean = false;
+
+    /**
+     * Whether the user is currently dragging the knob.
+     *
+     * Read-only on purpose: something driving the slider from outside (playback position, for
+     * one) has to know when to stop writing `value`, or it fights the drag — but nothing
+     * outside may declare a drag started.
+     */
+    get dragging(): boolean {
+        return this.drag;
+    }
+
+    private readonly onMouseMoveBound = this.onMouseMove.bind(this);
+    private readonly onMouseUpBound = this.stopDrag.bind(this);
+    private readonly onTouchMoveBound = this.onTouchMove.bind(this);
+    private readonly onTouchEndBound = this.stopDrag.bind(this);
 
     updated(changedProperties: PropertyValues) {
-        if (changedProperties.has('value') || changedProperties.has('minValue') || changedProperties.has('maxValue')) {
+        if (changedProperties.has('value') || changedProperties.has('min') || changedProperties.has('max')) {
             this.refresh();
         }
+    }
+
+    firstUpdated() {
+        this.refresh();
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this.cleanupDragListeners();
     }
 
     refresh() {
         const p = this.progress;
 
-        this.sliderElement!.style.setProperty(`--fill-scale`, '' + p);
-        this.sliderElement!.style.setProperty(`--progress`, `${p * 100}%`);
+        this.sliderElement!.style.setProperty(`--li-slider-fill-ratio`, '' + p);
+        this.sliderElement!.style.setProperty(`--li-slider-knob-position`, `${p * 100}%`);
     }
 
-    firstUpdated() {
-        this.initSlider();
+    /**
+     * Maps a clientX coordinate to a stepped value within [min, max].
+     */
+    private getValueFromClientX(clientX: number): number {
+        const rect = this.sliderElement!.getBoundingClientRect();
+        const range = this.max - this.min;
+        const raw = this.min + Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)) * range;
+
+        return Math.max(this.min, Math.min(this.max, this.snapToStep(raw)));
+    }
+
+    private onMouseDown(e: MouseEvent) {
+        e.preventDefault();
+        this.drag = true;
+        this.value = this.getValueFromClientX(e.clientX);
         this.refresh();
+        this.notifyValue();
+        window.addEventListener('mousemove', this.onMouseMoveBound);
+        window.addEventListener('mouseup', this.onMouseUpBound);
     }
 
-    initSlider() {
-        let startX = 0;
-        let knobStartX = 0;
-
-        const onMove = (clientX: number) => {
-            const sliderRect = this.sliderElement!.getBoundingClientRect();
-            const knobRect = this.knobElement!.getBoundingClientRect();
-            const maxRight = sliderRect.width - knobRect.width;
-            const deltaX = clientX - startX;
-            const left = Math.min(maxRight, Math.max(0, knobStartX + deltaX));
-            const value = Math.round((left / maxRight) * (this.maxValue - this.minValue) + this.minValue);
-
-            this.value = Math.max(this.minValue, Math.min(this.maxValue, value));
-            this.refresh();
-            this.notifyValue();
-        };
-
-        const onMouseMove = (e: MouseEvent) => {
-            e.preventDefault();
-            onMove(e.clientX);
-        };
-
-        const onTouchMove = (e: TouchEvent) => {
-            if (e.touches.length > 0) {
-                onMove(e.touches[0].clientX);
-            }
-        };
-
-        const endDrag = () => {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', endDrag);
-            document.removeEventListener('touchmove', onTouchMove);
-            document.removeEventListener('touchend', endDrag);
-            this.drag = false;
-            this.notifyValue();
-        };
-
-        const startDrag = (clientX: number) => {
-            const sliderRect = this.sliderElement!.getBoundingClientRect();
-            const knobRect = this.knobElement!.getBoundingClientRect();
-            startX = clientX;
-            knobStartX = knobRect.left - sliderRect.left;
-            this.drag = true;
-
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', endDrag);
-            document.addEventListener('touchmove', onTouchMove);
-            document.addEventListener('touchend', endDrag);
-        };
-
-        this.knobElement!.addEventListener('mousedown', (e: MouseEvent) => {
-            e.preventDefault();
-            startDrag(e.clientX);
-        });
-
-        this.knobElement!.addEventListener('touchstart', (e: TouchEvent) => {
-            if (e.touches.length > 0) {
-                startDrag(e.touches[0].clientX);
-            }
-        }, { passive: false });
+    private onTouchStart(e: TouchEvent) {
+        if (e.cancelable) e.preventDefault();
+        this.drag = true;
+        const touch = e.touches[0] || e.changedTouches[0];
+        this.value = this.getValueFromClientX(touch.clientX);
+        this.refresh();
+        this.notifyValue();
+        window.addEventListener('touchmove', this.onTouchMoveBound, { passive: false });
+        window.addEventListener('touchend', this.onTouchEndBound);
+        window.addEventListener('touchcancel', this.onTouchEndBound);
     }
 
-    notifyValue() {
-        const event = new CustomEvent<SliderChangeEvent>('change', {
-            detail: {
-                value: this.value,
-            },
-        });
-
-        this.dispatchEvent(event);
-    }
-
-    sliderClick(e: MouseEvent) {
-        const p = e.composedPath();
-
-        if (p.length > 0 && p[0] === this.knobElement) {
-            return;
-        }
-
-        const b = this.sliderElement!.getBoundingClientRect();
-        const value = Math.round(
-            Math.max(0, Math.min(this.maxValue, ((e.clientX - b.left) / b.width) * this.maxValue)),
-        );
-
-        this.value = value;
+    private onMouseMove(e: MouseEvent) {
+        if (!this.drag) return;
+        this.value = this.getValueFromClientX(e.clientX);
         this.refresh();
         this.notifyValue();
     }
 
-    render() {
-        return html`
-            <div id="slider" @mousedown=${this.sliderClick}>
-                <div id="line" class=${classMap({ fill: this.fill })}></div>
-                <div id="knob"></div>
-            </div>
-        `;
+    private onTouchMove(e: TouchEvent) {
+        if (!this.drag) return;
+        if (e.cancelable) e.preventDefault();
+        const touch = e.touches[0] || e.changedTouches[0];
+        this.value = this.getValueFromClientX(touch.clientX);
+        this.refresh();
+        this.notifyValue();
+    }
+
+    private stopDrag() {
+        if (!this.drag) return;
+        this.cleanupDragListeners();
+        this.notifyValue();
+    }
+
+    /**
+     * Removes global drag listeners and resets drag state. Safe when no drag is active.
+     */
+    private cleanupDragListeners() {
+        if (!this.drag) return;
+        this.drag = false;
+        window.removeEventListener('mousemove', this.onMouseMoveBound);
+        window.removeEventListener('mouseup', this.onMouseUpBound);
+        window.removeEventListener('touchmove', this.onTouchMoveBound);
+        window.removeEventListener('touchend', this.onTouchEndBound);
+        window.removeEventListener('touchcancel', this.onTouchEndBound);
+    }
+
+    notifyValue() {
+        this.dispatchEvent(new CustomEvent<SliderChangeEvent>('change', {
+            detail: { value: this.value },
+        }));
+    }
+
+    /**
+     * Snaps a raw value to the nearest step, preserving decimal precision.
+     */
+    private snapToStep(value: number): number {
+        const steps = Math.round((value - this.min) / this.step);
+        const snapped = this.min + steps * this.step;
+        const precision = (this.step.toString().split('.')[1] ?? '').length;
+
+        return parseFloat(snapped.toFixed(precision));
     }
 
     get progress(): number {
-        return this.value / this.maxValue;
+        const range = this.max - this.min;
+
+        return range === 0 ? 0 : (this.value - this.min) / range;
+    }
+
+    render() {
+        let fill: TemplateResult | null = null;
+
+        if (this.fill) {
+            fill = html`<div id="fill"></div>`;
+        }
+
+        return html`
+            <div id="slider" @mousedown=${this.onMouseDown} @touchstart=${this.onTouchStart}>
+                <div id="bar">
+                    <slot>
+                        <div id="line"></div>
+                        ${fill}
+                    </slot>
+                </div>
+                <div id="knob"></div>
+            </div>
+        `;
     }
 
     static styles = unsafeCSS(CSS);

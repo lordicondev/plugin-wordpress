@@ -35,14 +35,14 @@ export class StatePreviewComponent extends LitElement {
         this.iconElement!.state = this.state;
 
         if (this.animation) {
-            let [trigger, ..._name] = this.state.split('-');
+            let [trigger] = this.state.split('-');
 
             if (trigger === 'loop') {
                 trigger = 'loop-on-hover';
             }
 
-            let clickToReplay: boolean = trigger === 'in';
-            let delay: number = clickToReplay ? 500 : 0;
+            const clickToReplay: boolean = trigger === 'in';
+            const delay: number = clickToReplay ? 500 : 0;
 
 
             if (delay) {

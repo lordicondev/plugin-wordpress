@@ -12,7 +12,7 @@
     position: relative;
     border: 2px solid transparent;
     border-radius: var(--li-radius);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--li-color-bg-secondary);
     cursor: pointer;
     box-sizing: border-box;
     aspect-ratio: 1;
@@ -27,8 +27,8 @@
 }
 
 :host(:hover) .container {
-    border-color: var(--li-color-border-pressed);
-    background: rgba(255, 255, 255, 0.20);
+    border-color: var(--li-color-brand);
+    background: var(--li-color-bg-hover);
 }
 
 li-icon {
@@ -50,7 +50,6 @@ span.title {
     text-align: center;
     position: relative;
     z-index: 2;
-    pointer-events: none;
     margin-top: var(--li-space-sm);
 }
 
@@ -62,9 +61,9 @@ span.premium {
     display: block;
     line-height: 19px;
     display: inline-block;
-    font-weight: 600;
+    font-weight: var(--li-font-weight-semibold);
     text-transform: uppercase;
-    color: var(--li-color-bg-brand);
+    color: var(--li-color-brand);
     font-size: 0.75rem;
     line-height: 1;
     letter-spacing: 1px;

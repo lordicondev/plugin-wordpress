@@ -1,70 +1,74 @@
-# Lordicon – Animated Icons for WordPress
+# Lordicon for WordPress
 
-Effortlessly enhance your Gutenberg pages with beautifully animated icons from the Lordicon library. Add motion and style without compromising performance.
+Gutenberg block for inserting Lordicon's animated icons. The plugin embeds the icon's Lottie
+file in the media library and renders it with `<lord-icon>`, with a static SVG standing in
+until the animation comes alive.
 
-Lordicon offers a unique library of modern, animated icons designed to bring life and interactivity to your WordPress site. With this plugin, you can seamlessly browse, customize, and insert Lordicon icons directly into the Gutenberg editor.
+User-facing documentation is in [readme.txt](readme.txt), which is what WordPress.org renders.
 
-Built to be fast, lightweight, and easy to use, the Lordicon plugin helps you enrich your content with motion graphics that stay performance-friendly. Whether you need subtle interactions or eye-catching animations, Lordicon provides the flexibility to match your brand and design style.
+## Requirements
 
-## Features
+- WordPress 6.7+ (tested up to 7.1), PHP 7.4+
+- Node 20+ to build the editor UI
 
-- Extensive free icon set (with attribution)
-- Full icon library available in PRO version (no attribution)
-- Insert icons directly as Gutenberg blocks  
-- Customize colors, stroke, animation type, and triggers  
-- Optimized for performance with image fallbacks and lazy loading  
+## Layout
 
-## Frequently Asked Questions
+```
+lordicon.php        plugin header and bootstrap
+includes/           PHP: block registration, rendering, AJAX endpoints, API client
+ui/                 sources for the three bundles (not shipped)
+dist/               build output (shipped, git-ignored)
+```
 
-### Is Lordicon free to use?
-Yes, the plugin and a curated set of icons are free for personal, non-commercial use with required attribution.
+Three bundles come out of `ui/`:
 
-To unlock the full icon library, remove attribution, and gain commercial rights, you'll need to subscribe to a PRO plan.
+| bundle | where it runs |
+|---|---|
+| `block.js` | the Gutenberg editor — block registration plus the Lit icon picker |
+| `element.js` | the published page, and the editor canvas iframe — defines `<lord-icon>` |
+| `settings.js` | the wp-admin settings screen |
 
-### Do I need a Lordicon account to use this plugin?
-No, you can use the free icons without creating a Lordicon account.
-
-A Lordicon account is only required to access the PRO icon library. You can log in via **Settings → Lordicon** in your WordPress admin dashboard.
-
-**Note:** Subscription management (upgrading to PRO, payment, or account settings) is handled on the Lordicon website.
-
-### Do I need a PRO plan?
-You only need the PRO plan if:
-
-- You're using icons for commercial purposes  
-- You need attribution-free use  
-- You want access to the entire icon library  
-- You require advanced customization and multiple downloads
-
-[Explore our pricing](https://lordicon.com/pricing)
-
-## License
-
-- Plugin code: [GPLv2 or later](https://www.gnu.org/licenses/gpl-2.0.html)  
-- Icons: [Lordicon License Terms](https://lordicon.com/licenses)  
-
-## Development
-
-This plugin includes a frontend build step for its Gutenberg block UI.
-
-- Source files: `/ui` directory (JavaScript/TypeScript, styles, etc.)
-- Build tool: [Vite](https://vitejs.dev/)
-- Build output: `/dist` directory (included in the distributed plugin)
-- PHP files: top-level plugin files – no build process required
-
-### Build instructions
-
-Clone the repository and run:
+## Build
 
 ```bash
 cd ui
 npm install
-npm run build
+npm run build        # writes ../dist
+npm run dev          # the same, in watch mode
 ```
 
-This will generate the production-ready frontend assets in /dist.
+```bash
+npm run lint
+npm run typecheck
+```
 
-## Links
+## Package
 
-- [Lordicon Website](https://lordicon.com)  
-- [Pricing](https://lordicon.com/pricing)
+```bash
+cd ui && npm run package
+```
+
+Builds, then writes `lordicon-<version>.zip` at the repository root containing only what a
+site needs. Everything in [.distignore](.distignore) is left out — sources, toolchain,
+credentials — and the script fails rather than publishing them if an exclusion ever stops
+matching.
+
+Keep three places in step when releasing: the `Version` header in `lordicon.php`,
+`Constants::PLUGIN_VERSION`, and `Stable tag` in `readme.txt`.
+
+## Local WordPress
+
+A ready-made WordPress 7.1 environment, with this plugin mounted in place and Plugin Check
+installed, lives in the sibling `plugin-wordpress-dev-env` repository. See its README.
+
+## Render harness
+
+`ui/tools/baseline` drives the render pipeline directly in a browser over a fixed matrix of
+icons and settings, and `ui/tools/driver` captures the results:
+
+```bash
+npm run baseline:serve                    # in one shell
+npm run baseline:capture -- /tmp/after     # in another
+```
+
+Compare two captures to see whether a change altered what the plugin draws.

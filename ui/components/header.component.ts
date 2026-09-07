@@ -8,6 +8,15 @@ export class HeaderComponent extends LitElement {
     @property({ type: String })
     button = '';
 
+    /**
+     * Full heading text, used for the tooltip that appears once the slotted title is cut.
+     * The slot itself carries no text we can measure, so the caller states it here as well.
+     * Not named `title`: that is a native HTMLElement property and would raise the browser's
+     * own tooltip alongside ours.
+     */
+    @property({ type: String })
+    heading = '';
+
     back() {
         this.dispatchEvent(new CustomEvent('back'));
     }
@@ -18,7 +27,7 @@ export class HeaderComponent extends LitElement {
                 <li-pictogram icon="arrowBack"></li-pictogram>
                 <span>${this.button}</span>
             </div>
-            <div class="title">
+            <div class="title" ${tooltip(this.heading, { whenTruncated: true })}>
                 <slot></slot>
             </div>
             <div class="action">

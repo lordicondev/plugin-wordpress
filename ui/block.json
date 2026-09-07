@@ -1,5 +1,6 @@
 {
-    "apiVersion": 2,
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
     "name": "lordicon/block",
     "title": "Lordicon",
     "category": "widgets",
@@ -37,5 +38,8 @@
             "type": "string"
         }
     },
-    "editorScript": "lordicon-block-js"
+    "editorScript": "lordicon-block-js",
+    "editorStyle": "lordicon-block-css",
+    "style": "lordicon-element-css",
+    "viewScriptModule": "file:./element.js"
 }

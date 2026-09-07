@@ -1,3 +1,10 @@
 .vscode/
+node_modules/
 ui/node_modules/
 dist/
+
+# npm auth token for the private @lordicon/* packages. Never commit.
+.npmrc
+
+# Build artifacts of `npm run package`.
+*.zip

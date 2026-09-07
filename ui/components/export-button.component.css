@@ -4,7 +4,7 @@
     box-sizing: border-box;
     align-items: center;
     color: var(--li-color-text-on-brand);
-    font-weight: 500;
+    font-weight: var(--li-font-weight-medium);
     position: relative;
     cursor: pointer;
 
@@ -29,20 +29,20 @@
     flex: 1;
     padding: 0 var(--li-space-md);
     text-align: center;
-    background: var(--li-color-bg-brand);
+    background: var(--li-color-brand);
     height: var(--li-size-field-sm);
 }
 
 .export:hover {
-    background: var(--li-color-bg-brand-hover);
+    background: var(--li-color-brand-hover);
 }
 
 .export:active {
-    background: var(--li-color-bg-brand-pressed);
+    background: var(--li-color-brand-pressed);
 }
 
 :host(.busy) .export {
-    background: linear-gradient(90deg, var(--li-color-bg-brand) 0%, var(--li-color-bg-brand) 50%, var(--li-color-bg-brand-hover) 50%); 
+    background: linear-gradient(90deg, var(--li-color-brand) 0%, var(--li-color-brand) 50%, var(--li-color-brand-hover) 50%); 
     background-size: 200% 100%;
     background-position: calc(-1 * var(--progress, 0%));
 
@@ -57,18 +57,18 @@
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    background: var(--li-color-bg-brand);
+    background: var(--li-color-brand);
     height: var(--li-size-field-sm);
     aspect-ratio: 1;
     border-left: 1px solid var(--li-color-bg);
 }
 
 .more:hover {
-    background: var(--li-color-bg-brand-hover);
+    background: var(--li-color-brand-hover);
 }
 
 .more:active {
-    background: var(--li-color-bg-brand-pressed);
+    background: var(--li-color-brand-pressed);
 }
 
 li-list {

@@ -13,18 +13,22 @@
     gap: var(--li-space-xs);
     min-width: 10px;
     overflow: hidden;
-    background: rgba(255,255,255,0.15);
-    border-radius: var(--li-radius);
+    background: var(--li-color-bg-secondary);
+    border-radius: var(--li-radius-md);
     padding: var(--li-space-xs);
     border: 2px solid transparent;
 }
 
+.item:hover {
+    background: var(--li-color-bg-hover);
+}
+
 .item.active {
-    border-color: var(--li-color-bg-brand);
+    border-color: var(--li-color-brand);
 }
 
 .item:hover, .item:active {
-    border-color: var(--li-color-bg-brand);
+    border-color: var(--li-color-brand);
 }
 
 .item span {

@@ -10,7 +10,7 @@ import styles_doodle_color from '../assets/styles-doodle-color.json';
 import styles_doodle_motif from '../assets/styles-doodle-motif.json';
 import styles_doodle_outline from '../assets/styles-doodle-outline.json';
 import styles_missing from '../assets/styles-missing.json';
-import styles_system_regular from '../assets/styles-system-regular.json';
+import styles_system_regular from '../assets/styles-system-outline.json';
 import styles_system_solid from '../assets/styles-system-solid.json';
 import styles_wired_flat from '../assets/styles-wired-flat.json';
 import styles_wired_gradient from '../assets/styles-wired-gradient.json';
@@ -138,7 +138,7 @@ const STYLES_ICONS = {
     'wired-flat': styles_wired_flat,
     'wired-lineal': styles_wired_lineal,
     'wired-gradient': styles_wired_gradient,
-    'system-regular': styles_system_regular,
+    'system-outline': styles_system_regular,
     'system-solid': styles_system_solid,
     'doodle-outline': styles_doodle_outline,
     'doodle-motif': styles_doodle_motif,

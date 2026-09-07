@@ -1,11 +1,26 @@
 {
     "compilerOptions": {
         "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "lib": ["ESNext", "DOM", "DOM.Iterable"],
+        // Lit 3 with TypeScript's decorators, not the ES standard ones. Both flags are
+        // load-bearing: @customElement and @property rely on this pairing.
         "experimentalDecorators": true,
         "useDefineForClassFields": false,
-        "module": "ESNext",
-        "lib": ["ESNext", "DOM", "DOM.Iterable"],
         "strict": true,
-        "moduleResolution": "bundler"
-    }
+        "noEmit": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        // block.jsx is JavaScript with JSX. It is parsed so imports resolve, but not
+        // type-checked - the wp.* globals it reaches for have no types here. ESLint covers it.
+        "allowJs": true,
+        "checkJs": false,
+        "jsx": "react",
+        // No "node" here: this is browser code. The build scripts get their own project.
+        "types": []
+    },
+    "include": ["**/*.ts", "**/*.tsx", "**/*.jsx", "global.d.ts"],
+    "exclude": ["node_modules", "vite.shared.ts", "vite-*.config.ts", "tools/**"]
 }

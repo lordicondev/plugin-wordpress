@@ -2,19 +2,20 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    height: var(--li-size-field-sm);
+    height: var(--li-input-height, var(--li-field-height, var(--li-size-field-sm)));
     min-width: 30px;
     box-sizing: border-box;
     background: transparent;
     color: var(--li-color-text);
     font-family: var(--li-font-family);
-    font-size: var(--li-font-size-sm);
+    font-size: var(--li-input-font-size, var(--li-font-size-sm));
+    font-weight: var(--li-font-weight);
     line-height: var(--li-line-height);
 }
 
 input {
     margin: 0;
-    padding: 0 var(--li-space-sm);
+    padding: 0 var(--li-input-space, var(--li-space-sm));
     height: inherit;
     background: transparent;
     border: 0;
@@ -34,29 +35,24 @@ input::placeholder,
 input::-webkit-input-placeholder {
     color: var(--li-color-text-secondary);
     font-family: var(--li-font-family);
-    font-size: var(--li-font-size-sm);
+    font-size: inherit;
+    font-weight: var(--li-font-weight);
     line-height: var(--li-line-height);
-}
-
-input[type=number]::-webkit-outer-spin-button,
-input[type=number]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
 }
 
 .prefix,
 .suffix {
-    font-weight: 600;
-    font-size: var(--li-font-size-sm);
     color: var(--li-color-text-secondary);
+    font-size: var(--li-font-size-sm);
+    font-weight: var(--li-font-weight-semibold);
 }
 
 .prefix {
-    padding-left: var(--li-space-sm);
+    padding-left: var(--li-input-space, var(--li-space-sm));
 }
 
 .suffix {
-    padding-right: var(--li-space-sm);
+    padding-right: var(--li-input-space, var(--li-space-sm));
 }
 
 :host(.center) input {
@@ -64,13 +60,13 @@ input[type=number]::-webkit-inner-spin-button {
 }
 
 :host(.big) {
-    font-size: var(--li-font-size-md);
-    height: var(--li-size-field-md);
+    --li-input-font-size: var(--li-font-size-md);
+    --li-input-height: var(--li-size-field-md);
 }
 
 :host(.uppercase) input {
     text-transform: uppercase;
-    font-weight: 500;
+    font-weight: var(--li-font-weight-medium);
 }
 
 :host(.slim) input {

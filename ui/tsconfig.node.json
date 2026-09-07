@@ -1,0 +1,19 @@
+{
+    // The Vite build configuration. It runs in Node, so it gets Node types and the DOM
+    // globals stay out - which is what keeps a browser-only API from silently
+    // type-checking inside a build script.
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "lib": ["ESNext"],
+        "strict": true,
+        "noEmit": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true,
+        "types": ["node"]
+    },
+    // Only the build configuration. The harness under tools/baseline is browser code and
+    // has its own project; pulling it in here stripped it of the DOM lib.
+    "include": ["vite.shared.ts", "vite-*.config.ts"]
+}

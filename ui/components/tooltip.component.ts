@@ -1,6 +1,6 @@
 import { html, LitElement, unsafeCSS } from "lit";
 import { customElement } from 'lit/decorators.js';
-import { Async, debounce, IS_MOBILE, TIME_OUT_AFTER } from "../helpers";
+import { Async, debounce, IS_MOBILE, isTruncated, TIME_OUT_AFTER } from "../helpers";
 import CSS from './tooltip.component.css?raw';
 
 interface PositionInterface {
@@ -13,14 +13,24 @@ const SHOW_DELAY = 250;
 
 type TARGET_TYPE = HTMLElement & { [REGISTER_SYMBOL]?: RegisteredTooltip };
 
+export interface TooltipOptions {
+    /**
+     * Show the tooltip only while the target's text does not fit its box, so a title cut with
+     * an ellipsis can be read in full and a title that fits stays quiet.
+     */
+    whenTruncated?: boolean;
+}
+
 export class RegisteredTooltip {
     text: string;
+    options: TooltipOptions;
     target: TARGET_TYPE;
     centerTarget: HTMLElement;
     tooltip?: TooltipComponent;
 
-    constructor(text: string, target: HTMLElement, centerTarget?: HTMLElement) {
+    constructor(text: string, target: HTMLElement, centerTarget?: HTMLElement, options: TooltipOptions = {}) {
         this.text = text;
+        this.options = options;
         this.target = target;
         this.centerTarget = centerTarget || target;
 
@@ -47,8 +57,13 @@ export class RegisteredTooltip {
         this.target[REGISTER_SYMBOL] = undefined;
     }
 
-    update(text: string) {
+    update(text: string, options?: TooltipOptions) {
         this.text = text;
+
+        if (options) {
+            this.options = options;
+        }
+
         if (this.tooltip) {
             this.tooltip.innerText = text;
 
@@ -62,6 +77,10 @@ export class RegisteredTooltip {
 
     showTooltip() {
         if (this.text.length === 0 || this.tooltip || IS_MOBILE) {
+            return;
+        }
+
+        if (this.options.whenTruncated && !isTruncated(this.target)) {
             return;
         }
 
@@ -143,10 +162,10 @@ export class TooltipComponent extends LitElement {
         this._position.y = value.y;
     }
 
-    static register(text: string, target: TARGET_TYPE, center?: HTMLElement): RegisteredTooltip {
+    static register(text: string, target: TARGET_TYPE, center?: HTMLElement, options?: TooltipOptions): RegisteredTooltip {
         let registered: RegisteredTooltip | undefined = target[REGISTER_SYMBOL];
         if (!registered) {
-            registered = target[REGISTER_SYMBOL] = new RegisteredTooltip(text, target, center);
+            registered = target[REGISTER_SYMBOL] = new RegisteredTooltip(text, target, center, options);
         }
 
         return registered;

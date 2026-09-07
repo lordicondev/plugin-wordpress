@@ -19,7 +19,7 @@ export class AuthCodeComponent extends LitElement {
     protected firstUpdated(_changedProperties: PropertyValues): void {
         const inputs = Array.from(this.inputs!.values());
         Promise.all(inputs.map(c => c.updateComplete)).then(() => {
-            const basicInputs: HTMLInputElement[] = inputs.map((input) => input.inputElement!);
+            const basicInputs: HTMLInputElement[] = inputs.map((input) => input.nativeInput);
             basicInputs.forEach((input) => {
                 this.initInput(input, basicInputs);
             });
@@ -59,7 +59,7 @@ export class AuthCodeComponent extends LitElement {
             input.select();
         });
 
-        input.addEventListener('input', e => {
+        input.addEventListener('input', () => {
             const value = ('' + input.value).trim();
             if (value.length) {
                 focusNext();

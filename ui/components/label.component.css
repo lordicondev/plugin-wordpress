@@ -2,16 +2,44 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    font-weight: 600;
-    font-size: var(--li-font-size-xs);
-    height: var(--li-icon-size-sm);
+    min-height: var(--li-icon-size-sm);
+
+    color: var(--li-label-color, var(--li-color-text-secondary));
+    font-family: var(--li-font-family);
+    font-size: var(--li-label-font-size, var(--li-font-size-xs));
+    font-weight: var(--li-label-font-weight, var(--li-font-weight-semibold));
+    line-height: var(--li-line-height);
+    user-select: none;
+}
+
+:host(.capitalize) {
+    text-transform: capitalize;
+}
+
+:host(.sm) {
+    --li-label-font-size: var(--li-font-size-xs);
+    --li-label-font-weight: var(--li-font-weight-medium);
+}
+
+:host(.md) {
+    --li-label-font-size: var(--li-font-size-sm);
+    --li-label-font-weight: var(--li-font-weight-semibold);
+}
+
+:host(.gray) {
+    --li-label-color: var(--li-color-text-secondary);
+}
+
+:host(.strong) {
+    --li-label-color: var(--li-color-text);
 }
 
 .content {
     flex: 1;
-    color: var(--li-color-text-secondary);
 }
 
-.action {
+::slotted([slot="prefix"]),
+::slotted([slot="suffix"]) {
     color: var(--li-color-text);
+    flex: none;
 }

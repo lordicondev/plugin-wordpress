@@ -1,35 +1,27 @@
 import { Element as LordIconElement } from '@lordicon/element';
-import { html, LitElement, PropertyValues, TemplateResult, unsafeCSS } from "lit";
+import { html, LitElement, PropertyValues, unsafeCSS } from "lit";
 import { customElement, property, query } from 'lit/decorators.js';
-import { isDarkColor, isLightColor, Progress } from "../helpers";
-import { PictogramComponent } from "./pictogram.component";
+import { isDarkColor, isLightColor } from "../helpers";
+import { AnimationTrigger, ExportFormat } from "../types";
 import CSS from './preview.component.css?raw';
-import { SliderSectionsComponent } from './slider-sections.component';
-import { SliderComponent } from "./slider.component";
 
 const DEFAULT_STROKE = 2;
 
 /**
- * Parses a duration in milliseconds to a string format.
- * @param duration Duration in milliseconds.
+ * Icon preview for the editor sidebar.
+ *
+ * It carries one rule: **the element here is configured exactly as `Plugin::render_block()`
+ * configures the one on the published page.** Same trigger, same attributes — so hovering
+ * the preview shows what a visitor will get, and there is no second playback implementation
+ * to drift out of step with PHP.
+ *
+ * That is why there is no scrub bar, no play button and no timeline. They would describe the
+ * animation rather than perform it, and nothing on the published page behaves that way.
  */
-function parseDuration(duration: number): string {
-    let v = duration / 1000;
-    v = Math.round(v * 10) / 10;
-
-    return `${v}s`;
-}
-
 @customElement('li-preview')
 export class PreviewComponent extends LitElement {
     @query('li-icon', true)
     iconElement?: LordIconElement;
-
-    @query('li-slider,li-slider-sections', false)
-    sliderElement?: SliderComponent | SliderSectionsComponent;
-
-    @query('li-pictogram', false)
-    playElement?: PictogramComponent;
 
     @property({ type: Object })
     icon: any;
@@ -46,40 +38,21 @@ export class PreviewComponent extends LitElement {
     @property()
     state: string = '';
 
+    /** Trigger the selected state belongs to, as `render_block()` derives it. */
     @property()
-    trigger: string = '';
+    trigger: AnimationTrigger = 'hover';
 
     @property({ type: Array })
     colors: any[] = [];
 
-    @property({ type: Array })
-    sections: any[] = [];
-
     @property({ type: String })
-    format: 'svg' | 'json' = 'json';
-
-    @property()
-    duration: number = 0;
+    format: ExportFormat = 'json';
 
     @property()
     speed: number = 1;
 
-    @property()
-    delay: number = 0;
-
-    @property()
+    @property({ type: Boolean })
     intro: boolean = false;
-
-    @property()
-    loop: boolean = false;
-
-    progress: Progress | null = null;
-
-    disconnectedCallback(): void {
-        this.stopProgress();
-
-        super.disconnectedCallback();
-    }
 
     updated(changedProperties: PropertyValues): void {
         if (changedProperties.has('background')) {
@@ -87,25 +60,17 @@ export class PreviewComponent extends LitElement {
         }
 
         const isLight = this.colors.reduce((acc, color) => {
-            if (acc && isLightColor(color.color)) {
-                return acc;
-            } else {
-                return false;
-            }
+            return acc && isLightColor(color.color);
         }, true);
 
         const isDark = this.colors.reduce((acc, color) => {
-            if (acc && isDarkColor(color.color, 0.35)) {
-                return acc;
-            } else {
-                return false;
-            }
+            return acc && isDarkColor(color.color, 0.35);
         }, true);
 
         this.classList.toggle('light', isLight);
         this.classList.toggle('dark', isDark);
 
-        const REFRESHABLE_PROPERTIES = ['icon', 'state', 'sequence', 'animation', 'intro', 'loop', 'speed', 'delay', 'format'];
+        const REFRESHABLE_PROPERTIES = ['icon', 'state', 'trigger', 'sequence', 'speed', 'intro', 'format'];
         for (const prop of REFRESHABLE_PROPERTIES) {
             if (changedProperties.has(prop)) {
                 this.refresh();
@@ -119,126 +84,58 @@ export class PreviewComponent extends LitElement {
             return;
         }
 
-        this.iconElement!.icon = this.icon;
-        this.iconElement!.state = this.state;
+        const element = this.iconElement!;
 
-        this.stopProgress();
-        this.iconElement?.playerInstance?.seekToStart();
+        element.icon = this.icon;
+        element.state = this.state;
 
-        if (this.isAnimation && (this.loop || this.trigger === 'loop')) {
-            this.iconElement!.trigger = 'sequence';
-            this.iconElement!.setAttribute('speed', '' + this.speed);
-            this.iconElement!.setAttribute('sequence', this.sequence);
-            this.iconElement!.setAttribute('duration', '' + this.duration);
+        if (!this.isAnimation) {
+            // The static format has no motion to show, so the icon rests on its last frame.
+            this.setIconAttribute('speed', null);
+            this.setIconAttribute('sequence', null);
+            this.setIconAttribute('intro', null);
+            this.setIconAttribute('click-to-replay', null);
+            element.trigger = 'last-frame';
+            return;
+        }
 
-            this.startProgress();
-        } else if (this.isComponent) {
-            let speed: number = this.speed;
-            let intro: boolean = this.intro;
-            let clickToReplay: boolean = this.trigger === 'in' || this.intro;
-            let delay: number = clickToReplay ? 500 : 0;
+        this.setIconAttribute('speed', '' + this.speed);
+        this.setIconAttribute('intro', this.intro ? '' : null);
 
-            if (speed) {
-                this.iconElement!.setAttribute('speed', speed.toString());
-            } else {
-                this.iconElement!.removeAttribute('speed');
-            }
+        if (this.sequence) {
+            // A sequence replaces the trigger, and carries its own pauses — the element's
+            // sequence trigger reads `delay` as a step, never as an attribute.
+            this.setIconAttribute('sequence', this.sequence);
+            this.setIconAttribute('click-to-replay', null);
+            element.trigger = 'sequence';
+            return;
+        }
 
-            if (delay) {
-                this.iconElement!.setAttribute('delay', delay.toString());
-            } else {
-                this.iconElement!.removeAttribute('delay');
-            }
+        this.setIconAttribute('sequence', null);
 
-            if (intro) {
-                this.iconElement!.setAttribute('intro', '');
-            } else {
-                this.iconElement!.removeAttribute('intro');
-            }
+        // Editor-only affordance, and the one place this deviates from the page: an entrance
+        // animation plays once on mount, so without a way to replay it there would be nothing
+        // left to look at. It changes nothing about what a visitor sees.
+        const clickToReplay = this.trigger === 'in' || this.intro;
+        this.setIconAttribute('click-to-replay', clickToReplay ? '' : null);
 
-            if (clickToReplay) {
-                this.iconElement!.setAttribute('click-to-replay', '');
-            } else {
-                this.iconElement!.removeAttribute('click-to-replay');
-            }
+        element.trigger = this.trigger;
+    }
 
-            this.iconElement!.trigger = this.trigger;
+    /**
+     * Sets or removes an attribute in one call; a null value removes it.
+     */
+    private setIconAttribute(name: string, value: string | null) {
+        if (value === null) {
+            this.iconElement!.removeAttribute(name);
         } else {
-            this.iconElement!.trigger = 'last-frame';
-        }
-
-    }
-
-    startProgress() {
-        if (this.progress) {
-            return;
-        }
-
-        this.progress = new Progress(
-            this.iconElement!,
-            this.sliderElement!,
-            this.playElement!,
-            this.sections,
-        );
-
-        this.progress.init();
-    }
-
-    stopProgress() {
-        if (!this.progress) {
-            return;
-        }
-
-        this.progress.destroy();
-        this.progress = null;
-    }
-
-    sectionSelect(e: CustomEvent) {
-        const section = e.detail.section;
-        const target = this.sliderElement?.parentElement;
-
-        const customEvent = new CustomEvent("section", {
-            detail: {
-                section,
-                target,
-            },
-            cancelable: true,
-        });
-
-        this.dispatchEvent(customEvent);
-
-        if (customEvent.defaultPrevented) {
-            e.preventDefault();
+            this.iconElement!.setAttribute(name, value);
         }
     }
 
     render() {
         if (!this.icon) {
             return html`<div class="icon"><slot></slot></div>`;
-        }
-
-        let slider: TemplateResult | null = null;
-
-        if (this.isAnimation && (this.loop || this.trigger === 'loop')) {
-            if (this.sections.length > 0) {
-                const playOnce = this.sequence.includes('idle');
-
-                slider = html`
-                    <div class="slider">
-                        ${playOnce ? html`<li-pictogram class="clickable" icon="pause"></li-pictogram>` : null}
-                        <li-slider-sections .sections=${this.sections} @section=${this.sectionSelect.bind(this)}></li-slider-sections>
-                        <li-label>${parseDuration(this.duration)}</li-label>
-                    </div>
-                `;
-            } else {
-                slider = html`
-                    <div class="slider">
-                        <li-pictogram class="clickable" icon="pause"></li-pictogram>
-                        <li-slider fill></li-slider>
-                        <li-label>${parseDuration(this.duration)}</li-label>
-                    </div>
-                `;
-            }
         }
 
         return html`
@@ -248,8 +145,6 @@ export class PreviewComponent extends LitElement {
                     .colors=${this.parsedColors}>
                 </li-icon>
             </div>
-
-            ${slider}
         `;
     }
 
@@ -260,10 +155,6 @@ export class PreviewComponent extends LitElement {
     }
 
     get isAnimation() {
-        return ['json'].includes(this.format);
-    }
-
-    get isComponent() {
         return this.format === 'json';
     }
 
