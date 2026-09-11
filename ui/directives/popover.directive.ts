@@ -57,6 +57,12 @@ class Popover {
         target: HTMLElement,
         params: {
             closeBoundary?: HTMLElement,
+            /**
+             * Floor for a `select` popover, which otherwise takes the trigger's width.
+             * Opt-in, because matching the trigger is the right default - it is only wrong
+             * where the rows carry more than the trigger does, and the trigger is narrow.
+             */
+            minWidth?: number,
         } = {}
     ) {
         if (this.opened) {
@@ -123,7 +129,9 @@ class Popover {
             const l = rect.left < ww / 2;
             const t = rect.top < wh / 2;
 
-            width = `${rect.width}px`;
+            // Anchored to whichever edge is nearer, so the extra width from `minWidth` grows
+            // inward, away from the viewport edge, rather than off-screen.
+            width = `${Math.min(Math.max(rect.width, params.minWidth ?? 0), ww - MARGIN * 2)}px`;
 
             if (l) {
                 left = `${rect.left}px`;

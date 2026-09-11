@@ -162,22 +162,19 @@ class AjaxHandler {
     }
 
     private function variants() {
-        $cache_key = 'lordicon_variants';
-        $cached_result = get_transient($cache_key);
-        
-        if ($cached_result !== false) {
-            wp_send_json_success($cached_result);
-            return;
+        // Shares both the key and the wrapping format with patch_module(), which reads the
+        // same response while rendering the page. Two shapes on one key would mean each side
+        // treating the other's entry as a miss.
+        $variants = API::cached(Constants::VARIANTS_TRANSIENT, HOUR_IN_SECONDS, function () {
+            $result = API::get_instance()->variants();
+            return isset($result['error']) ? null : ($result['data'] ?? []);
+        });
+
+        if ($variants === null) {
+            wp_send_json_error('Unable to load variants');
         }
 
-        $result = API::get_instance()->variants();
-
-        if (isset($result['error'])) {
-            wp_send_json_error($result['error']);
-        } else {
-            set_transient($cache_key, $result['data'], HOUR_IN_SECONDS);
-            wp_send_json_success($result['data']);
-        }
+        wp_send_json_success($variants);
     }
 
     private function auth_start($input) {
@@ -224,6 +221,10 @@ class AjaxHandler {
 
             $settings->token = $data['token'];
             update_option( 'lordicon_settings', wp_json_encode( $settings ) );
+
+            // The cached status and variants belong to the previous token - a guest one, at
+            // this point - so they describe the wrong account until they are dropped.
+            API::flush_cache();
         }
 
         wp_send_json_success();
@@ -231,7 +232,8 @@ class AjaxHandler {
 
     private function logout() {
         delete_option('lordicon_settings');
-    
+        API::flush_cache();
+
         wp_send_json_success();
     }
 

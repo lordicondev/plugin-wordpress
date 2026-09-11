@@ -70,7 +70,7 @@ export class WelcomePage extends LitElement {
                 ${stepContent}
             
                 ${this.step < STEPS.length - 1 ? html`<li-button @click=${this.finish} class="link" slot="action">Skip</li-button>` : null}
-                <li-button @click=${this.nextStep} class="brand" slot="action">${this.nextLabel}</li-button>
+                <li-button @click=${this.nextStep} class="primary" slot="action">${this.nextLabel}</li-button>
             </li-scaffold>
         `;
     }

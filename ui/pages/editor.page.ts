@@ -225,7 +225,7 @@ function renderPremiumIcon(this: EditorPage) {
     const signedin = __LORDICON__.status?.user;
 
     if (signedin) {
-        const subscribeToPro = __SUPPORT_NEW_TAB__ ? html`<li-button class="brand" @click=${this.pro}>Subscribe to PRO</li-button>` : null;
+        const subscribeToPro = __SUPPORT_NEW_TAB__ ? html`<li-button class="primary expand" @click=${this.pro}>Subscribe to PRO</li-button>` : null;
 
         return html`
             ${header}
@@ -249,7 +249,7 @@ function renderPremiumIcon(this: EditorPage) {
                     Unlock full access to the icon library and powerful time-saving features designed to boost your workflow.
                 </p>
 
-                <li-button class="brand" @click=${this.login}>Login</li-button>
+                <li-button class="primary expand" @click=${this.login}>Login</li-button>
             </li-layout>
         `;
     }

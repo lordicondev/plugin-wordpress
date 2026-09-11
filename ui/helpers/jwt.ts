@@ -3,7 +3,7 @@ export function parseJwt(token: string) {
         return null;
     }
 
-    const base64Url = token.split('.')[1]; // część payload
+    const base64Url = token.split('.')[1]; // the payload segment
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(
         atob(base64)

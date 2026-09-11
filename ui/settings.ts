@@ -16,10 +16,36 @@ defineIconElement();
 
 const container = document.getElementById('lordicon')!;
 
+const TOUR_SEEN_KEY = 'lordicon.tourSeen';
+
 let status = __LORDICON__.status || null;
 
 /**
- * Signed-in view. Logging out drops the status and falls back to the welcome screen.
+ * Whether the onboarding tour has already run in this browser.
+ *
+ * Storage access throws outright in some privacy modes, and a browser that cannot remember
+ * this is no reason to fail the screen — it only means the tour runs again.
+ */
+function tourSeen(): boolean {
+    try {
+        return localStorage.getItem(TOUR_SEEN_KEY) === '1';
+    } catch {
+        return false;
+    }
+}
+
+function markTourSeen(): void {
+    try {
+        localStorage.setItem(TOUR_SEEN_KEY, '1');
+    } catch {
+        // Nothing to recover from: the tour simply shows again next time.
+    }
+}
+
+/**
+ * Signed-in view. Logging out goes straight to the login form rather than back through the
+ * tour: someone who has just signed out has already seen it, and signing back in is the only
+ * thing the screen offers them next.
  */
 function accountPage(): HTMLElement {
     const page = new AccountPage();
@@ -27,19 +53,21 @@ function accountPage(): HTMLElement {
 
     page.addEventListener('logout', () => {
         status = null;
-        show();
+        container.replaceChildren(loginPage());
     });
 
     return page;
 }
 
 /**
- * First-run view. Its `finish` event moves on to the login form.
+ * First-run view. Its `finish` event moves on to the login form, and marks the tour as seen so
+ * a reload does not start it over. Both `Skip` and the final step dispatch it.
  */
 function welcomePage(): HTMLElement {
     const page = new WelcomePage();
 
     page.addEventListener('finish', () => {
+        markTourSeen();
         container.replaceChildren(loginPage());
     });
 
@@ -65,7 +93,12 @@ function loginPage(): HTMLElement {
  * Renders whichever page the current status calls for.
  */
 function show() {
-    container.replaceChildren(status?.user ? accountPage() : welcomePage());
+    if (status?.user) {
+        container.replaceChildren(accountPage());
+        return;
+    }
+
+    container.replaceChildren(tourSeen() ? loginPage() : welcomePage());
 }
 
 show();

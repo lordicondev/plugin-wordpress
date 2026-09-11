@@ -10,12 +10,13 @@ import styles_doodle_color from '../assets/styles-doodle-color.json';
 import styles_doodle_motif from '../assets/styles-doodle-motif.json';
 import styles_doodle_outline from '../assets/styles-doodle-outline.json';
 import styles_missing from '../assets/styles-missing.json';
-import styles_system_regular from '../assets/styles-system-outline.json';
+import styles_system_outline from '../assets/styles-system-outline.json';
 import styles_system_solid from '../assets/styles-system-solid.json';
 import styles_wired_flat from '../assets/styles-wired-flat.json';
 import styles_wired_gradient from '../assets/styles-wired-gradient.json';
 import styles_wired_lineal from '../assets/styles-wired-lineal.json';
 import styles_wired_outline from '../assets/styles-wired-outline.json';
+import type { ListOption } from '../components/list.component';
 import { DI } from "../core";
 import { capitalize, IS_DARK, PALETTE_DARK, STYLES_PRIORITY } from '../helpers';
 import CSS from './library.page.css?raw';
@@ -86,41 +87,47 @@ function parseLinkHeader(link: string): { [key: string]: string } {
     return links;
 }
 
+/**
+ * Turns the API's variant list into rows `<li-list>` can render.
+ *
+ * The field names are the component's, not ours: `value` is what the change event carries
+ * and what the current selection is matched against, and `icon` is the Lottie sample the row
+ * animates on hover. Naming them anything else costs the label, the samples and the
+ * selection at once, and silently - every symptom is a lookup that quietly finds nothing.
+ */
 function prepareVariants(
     variants: { family: string, style: string; free: number, premium: number }[],
-) {
-    const result: { id: any, title: string, subtitle?: string, json?: any }[] = [];
+): ListOption[] {
+    const result: ListOption[] = [];
 
     for (const variant of variants) {
-        const id = `${variant.family}-${variant.style}`;
+        const value = `${variant.family}-${variant.style}`;
         const title = `${capitalize(variant.family)} ${capitalize(variant.style)}`;
-        const free = variant.free;
-        const premium = variant.premium;
-        const subtitle = `${free + premium} icons`;
+        const description = `${variant.free + variant.premium} icons`;
 
-        const json = STYLES_ICONS[id as keyof typeof STYLES_ICONS] || styles_missing;
+        const icon = STYLES_ICONS[value as keyof typeof STYLES_ICONS] || styles_missing;
         const colors = PALETTE_DARK[`${variant.family}_${variant.style}`];
         if (IS_DARK && colors) {
-            remapColors(json, colors);
+            remapColors(icon, colors);
         }
 
         result.push({
-            id,
+            value,
             title,
-            subtitle,
-            json,
+            description,
+            icon,
         });
     }
 
-    // Chenge order with STYLES_PRIORITY
+    // Change order with STYLES_PRIORITY
     const ordered = STYLES_PRIORITY
-        .map((style) => result.find((item) => item.id === style))
-        .filter(Boolean);
+        .map((style) => result.find((item) => item.value === style))
+        .filter((item): item is ListOption => Boolean(item));
     const rest = result.filter(
-        (item) => !STYLES_PRIORITY.includes(item.id)
+        (item) => !STYLES_PRIORITY.includes(item.value)
     );
 
-    return [...ordered, ...rest] as any;
+    return [...ordered, ...rest];
 }
 
 function handleSrc(src: string, dark?: boolean) {
@@ -138,7 +145,7 @@ const STYLES_ICONS = {
     'wired-flat': styles_wired_flat,
     'wired-lineal': styles_wired_lineal,
     'wired-gradient': styles_wired_gradient,
-    'system-outline': styles_system_regular,
+    'system-outline': styles_system_outline,
     'system-solid': styles_system_solid,
     'doodle-outline': styles_doodle_outline,
     'doodle-motif': styles_doodle_motif,
@@ -161,7 +168,7 @@ export class LibraryPage extends LitElement {
     variant: string;
 
     @state()
-    variants: { id: any, title: string }[];
+    variants: ListOption[];
 
     @state()
     icons: IconData[] = [];
@@ -184,7 +191,7 @@ export class LibraryPage extends LitElement {
         const preferedVariant = DI.configService.get('variant') || PREFERED_VARIANT;
 
         this.variants = prepareVariants(__LORDICON__.variants || []);
-        this.variant = this.variants.find((c) => c.id === preferedVariant)?.id || this.variants[0]?.id;
+        this.variant = this.variants.find((c) => c.value === preferedVariant)?.value || this.variants[0]?.value;
 
         if (!this.variant) {
             return;
@@ -328,7 +335,7 @@ export class LibraryPage extends LitElement {
                 ${busy ? html`<div class="busy"><li-spinner></li-spinner></div>` : null}
             </div>
             
-            ${this.link.next ? html`<div class="footer"><li-button class="brand" @click=${this.loadMore}>Load more</li-button></div>` : null}
+            ${this.link.next ? html`<div class="footer"><li-button class="primary expand" @click=${this.loadMore}>Load more</li-button></div>` : null}
         `;
     }
 

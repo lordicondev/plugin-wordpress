@@ -14,6 +14,9 @@ interface SearchChangeEvent {
 
 const SEARCH_DELAY = 500;
 
+/** Enough for the longest variant name next to its sample; still inside the WP sidebar. */
+const VARIANT_LIST_MIN_WIDTH = 200;
+
 @customElement('li-library-parameter')
 export class LibraryParameterComponent extends LitElement {
     @query('li-input', true)
@@ -89,6 +92,12 @@ export class LibraryParameterComponent extends LitElement {
         this._popover.open(
             'select',
             this.selectElement!,
+            {
+                // The trigger is half of a narrow sidebar bar - about 130px in wp-admin -
+                // and these rows carry an animated sample and a count alongside the name.
+                // At the trigger's own width every variant name ellipsises to "Wired Ou...".
+                minWidth: VARIANT_LIST_MIN_WIDTH,
+            },
         );
     }
 

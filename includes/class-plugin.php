@@ -49,7 +49,6 @@ class Plugin {
             $this->loader->add_action('admin_enqueue_scripts', $this, 'enqueue_admin_assets');
             $this->loader->add_action('enqueue_block_editor_assets', $this, 'enqueue_block_editor_assets');
             $this->loader->add_action('admin_menu', $this, 'settings_init_menu');
-            $this->loader->add_action('admin_init', $this, 'settings_handle_form_submission');
 
             $this->loader->add_filter('plugin_row_meta', $this, 'plugin_links', 10, 3);
         } else {
@@ -120,8 +119,22 @@ class Plugin {
     private function patch_module(string $scriptHandle, string $context) {
         $url     = admin_url('admin-ajax.php');
         $nonce   = wp_create_nonce('lordicon_action');
-        $status  = API::get_instance()->status()['data'];
-        $variants = $status ? API::get_instance()->variants()['data'] : [];
+
+        // Both of these are remote calls to api.lordicon.com, and this method runs on every
+        // render of the settings screen and every block-editor load. Reading them through a
+        // transient keeps a slow or unreachable API off the critical path of wp-admin;
+        // API::flush_cache() drops both the moment the token changes, so the account state is
+        // never stale after signing in or out.
+        $status = API::cached(Constants::STATUS_TRANSIENT, 5 * MINUTE_IN_SECONDS, function () {
+            return API::get_instance()->status()['data'] ?? null;
+        });
+
+        $variants = [];
+        if ($status) {
+            $variants = API::cached(Constants::VARIANTS_TRANSIENT, HOUR_IN_SECONDS, function () {
+                return API::get_instance()->variants()['data'] ?? [];
+            });
+        }
 
         // Safely get post ID without using $_GET
         $post_id = 0;
@@ -204,33 +217,6 @@ class Plugin {
             'manage_options',
             'lordicon-settings',
             array($this, 'render_settings'),
-        );
-    }
-
-    public function settings_handle_form_submission() {
-        // Check if form is submitted
-        if ( ! isset( $_POST['lordicon_settings'], $_POST['lordicon_nonce'] ) ) {
-            return;
-        }
-
-        // Sanitize nonce
-        $nonce = sanitize_text_field( wp_unslash( $_POST['lordicon_nonce'] ) );
-        if ( ! wp_verify_nonce( $nonce, 'lordicon_settings_action' ) ) {
-            return;
-        }
-
-        // Sanitize settings
-        $settings = array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['lordicon_settings'] ) );
-
-        // Save settings
-        update_option( 'lordicon_settings', $settings );
-
-        // Message
-        add_settings_error(
-            'lordicon_settings',
-            'settings_updated',
-            __( 'Settings saved.', 'lordicon' ),
-            'updated'
         );
     }
 

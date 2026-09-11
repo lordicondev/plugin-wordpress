@@ -12,7 +12,12 @@ class API {
     private $settings;
 
     public function __construct() {
-        $this->settings = json_decode(get_option('lordicon_settings', '{}'));
+        $settings = json_decode(get_option('lordicon_settings', '{}'));
+
+        // A malformed or non-JSON option decodes to null, and assigning a property on null is
+        // a fatal in PHP 8 - autologin() does exactly that. The AJAX handler already guards
+        // its own decode of this option the same way.
+        $this->settings = is_object($settings) ? $settings : new \stdClass();
     }
 
     public static function get_instance() {
@@ -20,6 +25,49 @@ class API {
             self::$instance = new self();
         }
         return self::$instance;
+    }
+
+    /**
+     * Reads an API response through a transient, calling $fetch only on a miss.
+     *
+     * The value is wrapped, because a transient holding null or an empty array cannot be told
+     * apart from a missing one - get_transient() returns false for both. A failed fetch is
+     * cached too, but only briefly, so an unreachable API does not make every admin page load
+     * wait out the request timeout while still recovering on its own.
+     *
+     * @param string   $key   Transient key.
+     * @param int      $ttl   Lifetime of a successful response, in seconds.
+     * @param callable $fetch Called on a miss; returns the value to cache.
+     */
+    public static function cached(string $key, int $ttl, callable $fetch) {
+        $cached = get_transient($key);
+
+        // Matched on the exact shape, not just the presence of the key: a transient written
+        // by an earlier version of the plugin holds the bare response, and must read as a
+        // miss rather than as a wrapper that happens to have a 'data' entry.
+        if (is_array($cached) && array_keys($cached) === array('data')) {
+            return $cached['data'];
+        }
+
+        $value = $fetch();
+
+        // Null is how both callers report a failed request; an empty array is a perfectly
+        // good answer and keeps the full lifetime. Testing truthiness instead would put every
+        // empty response on the one-minute retry.
+        set_transient($key, array('data' => $value), $value === null ? MINUTE_IN_SECONDS : $ttl);
+
+        return $value;
+    }
+
+    /**
+     * Drops every cached API response.
+     *
+     * Called whenever the token changes - signing in or out makes both the account status and
+     * the icon variants available to it stale.
+     */
+    public static function flush_cache() {
+        delete_transient(Constants::STATUS_TRANSIENT);
+        delete_transient(Constants::VARIANTS_TRANSIENT);
     }
 
     /**

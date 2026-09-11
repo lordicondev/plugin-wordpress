@@ -33,15 +33,15 @@ export class HTTPService implements HTTPServiceInterface {
         const headers: Record<string, string> = {};
 
         if (isFormData) {
-            // Obsługa FormData (dla uploadów plików)
+            // FormData path, used by the icon upload endpoint.
             requestBody = data as FormData;
             requestBody.append('action', 'lordicon_request');
             requestBody.append('nonce', this.ajax.nonce);
             requestBody.append('endpoint', endpoint);
 
-            // Nie ustawiamy Content-Type dla FormData - przeglądarka ustawi automatycznie z boundary
+            // No Content-Type here: the browser sets it, together with the boundary.
         } else {
-            // Obsługa URLSearchParams (dla zwykłych requestów)
+            // Ordinary requests go as URL-encoded form data, which is what admin-ajax reads.
             const requestData = new URLSearchParams();
             requestData.append('action', 'lordicon_request');
             requestData.append('nonce', this.ajax.nonce);

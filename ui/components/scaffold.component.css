@@ -6,13 +6,13 @@
     padding: var(--li-space-md);
     box-sizing: border-box;
     gap: var(--li-space-md);
-    border-radius: var(--li-radius-big);
+    border-radius: var(--li-radius-lg);
 }
 
 .row {
     display: flex;
     flex-direction: row;
-    gap: var(--li-space-lg);
+    gap: var(--li-space-ml);
     align-items: center;
 }
 

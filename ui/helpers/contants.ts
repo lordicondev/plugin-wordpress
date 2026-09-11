@@ -5,7 +5,7 @@ export const PALETTE_DARK: { [variant: string]: { [color: string]: string } } = 
     system_solid: {
         '#121331': '#ffffff',
     },
-    system_regular: {
+    system_outline: {
         '#121331': '#ffffff',
     },
     doodle_outline: {

@@ -11,3 +11,7 @@ li-icon {
 p {
     margin: 0;
 }
+
+.email {
+    color: var(--li-color-text-secondary);
+}

@@ -12,6 +12,10 @@ class Constants {
 	const PLUGIN_BASENAME = 'lordicon/lordicon.php';
     const APP_NAME = 'wp';
 
+    // Cached API responses. Both are dropped by API::flush_cache() when the token changes.
+    const STATUS_TRANSIENT = 'lordicon_status';
+    const VARIANTS_TRANSIENT = 'lordicon_variants';
+
 	public static function plugin_version() {
 		return self::PLUGIN_VERSION;
     }
@@ -26,5 +30,13 @@ class Constants {
 
     public static function app_name() {
         return self::APP_NAME;
+    }
+
+    public static function status_transient() {
+        return self::STATUS_TRANSIENT;
+    }
+
+    public static function variants_transient() {
+        return self::VARIANTS_TRANSIENT;
     }
 }

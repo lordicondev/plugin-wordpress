@@ -19,6 +19,10 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
  */
 function lordicon_uninstall_site() {
 	delete_option( 'lordicon_settings' );
+
+	// Literals rather than Constants::*, because uninstall.php runs without loading the
+	// plugin. Keep in step with the transient keys in includes/class-constants.php.
+	delete_transient( 'lordicon_status' );
 	delete_transient( 'lordicon_variants' );
 }
 

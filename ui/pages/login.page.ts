@@ -139,7 +139,7 @@ export class LoginPage extends LitElement {
                 <li-button 
                     ?inert=${this.busy} 
                     @click=${!this.currentEmail ? this.checkEmail : this.checkCode} 
-                    class="brand" slot="action"
+                    class="primary" slot="action"
                 >Continue</li-button>
             </li-scaffold>
         `;
